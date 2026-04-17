@@ -1,0 +1,16 @@
+echo "🔍 Running lint-staged before commit..."
+
+# Check if yarn is installed
+if ! command -v yarn >/dev/null 2>&1; then
+  echo "❌ yarn is not installed. Please install it and try again."
+  exit 1
+fi
+
+# Run lint-staged
+if yarn lint-staged; then
+  echo "✅ lint-staged passed. All files are properly linted and formatted."
+else
+  echo "❌ lint-staged failed. Commit aborted."
+  echo "🛠 Please fix the issues and try committing again."
+  exit 1
+fi
