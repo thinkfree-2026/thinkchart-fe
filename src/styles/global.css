@@ -14,20 +14,20 @@
 }
 
 @utility text-title {
-  @apply text-[1.5rem] font-bold leading-tight;
+  @apply text-2xl font-bold;
 }
 
 @utility text-body {
-  @apply text-[1rem] font-normal leading-normal;
+  @apply text-base font-normal;
 }
 
 @utility text-caption {
-  @apply text-[0.875rem] font-normal leading-relaxed;
+  @apply text-sm font-normal;
 }
 
 @layer base {
   body {
-    @apply text-text-main font-sans text-body;
+    @apply font-sans text-body text-text-main;
     background-color: white;
   }
 }
