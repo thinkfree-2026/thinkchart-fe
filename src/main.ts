@@ -1,4 +1,4 @@
-import './style.css';
+import './styles/global.css';
 
 import heroImg from './assets/hero.png';
 import typescriptLogo from './assets/typescript.svg';
