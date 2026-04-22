@@ -4,4 +4,6 @@ coverage
 .cache
 *.log
 .DS_Store
-pnpm-lock.yaml
+.pnp.*
+.yarn/
+yarn.lock
