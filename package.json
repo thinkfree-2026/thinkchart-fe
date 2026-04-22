@@ -29,6 +29,10 @@
     "typescript-eslint": "^8.58.2",
     "vite": "^8.0.4"
   },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.2.3",
+    "tailwindcss": "^4.2.3"
+  },
   "lint-staged": {
     "*.{js,ts}": [
       "eslint --fix",
@@ -38,9 +42,5 @@
       "prettier --write"
     ]
   },
-  "packageManager": "yarn@4.13.0",
-  "dependencies": {
-    "@tailwindcss/vite": "^4.2.3",
-    "tailwindcss": "^4.2.3"
-  }
+  "packageManager": "yarn@4.13.0"
 }
