@@ -1,0 +1,44 @@
+name: Google Chat Notification
+
+on:
+  pull_request:
+    types: [opened, synchronize, closed]
+    branches:
+      - main
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send PR Notification to Google Chat
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_URL="${{ github.event.pull_request.html_url }}"
+          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+          PR_STATUS="${{ github.event.pull_request.merged }}"
+
+          # 상태에 따른 메시지 설정
+          if [ "${{ github.event.action }}" == "opened" ]; then
+            MSG="🚀 *새로운 PR이 도착했습니다!*"
+          elif [ "${{ github.event.action }}" == "synchronize" ]; then
+            MSG="♻️ *PR에 새로운 커밋이 추가되었습니다.*"
+          elif [ "${{ github.event.action }}" == "closed" ]; then
+            if [ "$PR_STATUS" == "true" ]; then
+              MSG="✅ *PR이 성공적으로 머지되었습니다!*"
+            else
+              MSG="🗑️ *PR이 머지되지 않고 닫혔습니다.*"
+            fi
+          fi
+
+          # JSON 데이터 생성
+          JSON_PAYLOAD=$(cat <<EOF
+          {
+            "text": "$MSG\n\n* **제목**: $PR_TITLE\n* **작성자**: $PR_AUTHOR\n* **바로가기**: $PR_URL"
+          }
+          EOF
+          )
+
+          # Google Chat Webhook 호출
+          curl -X POST -H "Content-Type: application/json; charset=UTF-8" \
+            -d "$JSON_PAYLOAD" \
+            "${{ secrets.GOOGLE_CHAT_WEBHOOK_URL }}"
