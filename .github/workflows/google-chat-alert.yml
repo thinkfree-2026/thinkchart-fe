@@ -40,7 +40,18 @@ jobs:
             MSG="💬 *새로운 댓글 등록*"
           fi
 
+          FULL_MSG=$(cat <<EOF
+          🎨 *[FE]* $MSG
+          
+          📌 *$PR_TITLE*
+          - 작성자: $AUTHOR
+          - 바로가기: $PR_URL
+          EOF
+          )
+
+          JSON_PAYLOAD=$(jq -n --arg txt "$FULL_MSG" '{text: $txt}')
+
           # 구글 챗 전송
           curl -X POST -H "Content-Type: application/json; charset=UTF-8" \
-            -d "{\"text\": \"🎨 *[FE]* $MSG\n\n* **PR**: $PR_TITLE\n* **액션 주체**: $AUTHOR\n* **링크**: $PR_URL\"}" \
+            -d "$JSON_PAYLOAD" \
             "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
