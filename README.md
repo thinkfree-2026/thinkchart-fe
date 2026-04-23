@@ -1,1 +1,1 @@
-# ThinkChart - Frontend
+# ThinkChart - FE
