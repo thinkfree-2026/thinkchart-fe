@@ -43,9 +43,9 @@ jobs:
           FULL_MSG=$(cat <<EOF
           🎨 *[FE]* $MSG
           
-          📍 PR: $PR_TITLE
-          👤 작성자: $AUTHOR
-          🔗 바로가기: $PR_URL
+          - $PR_TITLE
+          - 작성자: $AUTHOR
+          - 바로가기: $PR_URL
           EOF
           )
 
