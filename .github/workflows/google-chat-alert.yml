@@ -10,7 +10,7 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Send PR Notification to Google Chat
+      - name: Send PR Notification to Google Chat.
         run: |
           PR_TITLE="${{ github.event.pull_request.title }}"
           PR_URL="${{ github.event.pull_request.html_url }}"
