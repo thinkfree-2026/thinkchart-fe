@@ -1,4 +1,4 @@
-name: [FE] Google Chat Advanced Notifier
+name: "[FE] Google Chat Advanced Notifier"
 
 on:
   pull_request:
