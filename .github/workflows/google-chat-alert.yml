@@ -1,4 +1,4 @@
-name: Google Chat Advanced Notifier
+name: [FE] Google Chat Advanced Notifier
 
 on:
   pull_request:
@@ -42,5 +42,5 @@ jobs:
 
           # 구글 챗 전송
           curl -X POST -H "Content-Type: application/json; charset=UTF-8" \
-            -d "{\"text\": \"$MSG\n\n* **PR**: $PR_TITLE\n* **액션 주체**: $AUTHOR\n* **링크**: $PR_URL\"}" \
+            -d "{\"text\": \"🎨 *[FE]* $MSG\n\n* **PR**: $PR_TITLE\n* **액션 주체**: $AUTHOR\n* **링크**: $PR_URL\"}" \
             "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"
