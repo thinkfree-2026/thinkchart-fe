@@ -36,11 +36,11 @@
   },
   "lint-staged": {
     "*.{js,ts}": [
-      "eslint --fix",
-      "prettier --write"
+      "eslint src --fix",
+      "prettier . --write"
     ],
     "*.{css,html,json}": [
-      "prettier --write"
+      "prettier . --write"
     ]
   },
   "packageManager": "yarn@4.13.0"
