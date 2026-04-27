@@ -1,4 +1,4 @@
-name: "[FE] Google Chat Advanced Notifier"
+name: '[FE] Google Chat Advanced Notifier'
 
 on:
   pull_request:
@@ -19,7 +19,7 @@ jobs:
           AUTHOR="${{ github.actor }}"
           PR_TITLE="${{ github.event.pull_request.title || github.event.issue.title }}"
           PR_URL="${{ github.event.pull_request.html_url || github.event.issue.html_url }}"
-          
+
           # 이벤트별 커스텀 메시지
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             case "${{ github.event.action }}" in
@@ -42,7 +42,7 @@ jobs:
 
           FULL_MSG=$(cat <<EOF
           🎨 *[FE]* $MSG
-          
+
           📌 *$PR_TITLE*
           - 작성자: $AUTHOR
           - 바로가기: $PR_URL
