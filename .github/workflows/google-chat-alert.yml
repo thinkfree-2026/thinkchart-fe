@@ -1,44 +1,57 @@
-name: Google Chat Notification
+name: '[FE] Google Chat Advanced Notifier'
 
 on:
   pull_request:
-    types: [opened, synchronize, closed]
-    branches:
-      - main
+    types: [opened, synchronize, closed, review_requested]
+    branches: [main]
+  pull_request_review:
+    types: [submitted]
+  issue_comment:
+    types: [created]
 
 jobs:
   notify:
     runs-on: ubuntu-latest
+    if: github.event.pull_request || github.event.issue.pull_request
     steps:
-      - name: Send PR Notification to Google Chat
+      - name: Send Notification
         run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          PR_URL="${{ github.event.pull_request.html_url }}"
-          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
-          PR_STATUS="${{ github.event.pull_request.merged }}"
+          AUTHOR="${{ github.actor }}"
+          PR_TITLE="${{ github.event.pull_request.title || github.event.issue.title }}"
+          PR_URL="${{ github.event.pull_request.html_url || github.event.issue.html_url }}"
 
-          # 상태에 따른 메시지 설정
-          if [ "${{ github.event.action }}" == "opened" ]; then
-            MSG="🚀 *새로운 PR이 도착했습니다!*"
-          elif [ "${{ github.event.action }}" == "synchronize" ]; then
-            MSG="♻️ *PR에 새로운 커밋이 추가되었습니다.*"
-          elif [ "${{ github.event.action }}" == "closed" ]; then
-            if [ "$PR_STATUS" == "true" ]; then
-              MSG="✅ *PR이 성공적으로 머지되었습니다!*"
-            else
-              MSG="🗑️ *PR이 머지되지 않고 닫혔습니다.*"
-            fi
+          # 이벤트별 커스텀 메시지
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            case "${{ github.event.action }}" in
+              opened) MSG="🚀 *새로운 PR 도착*" ;;
+              synchronize) MSG="♻️ *코드 업데이트 (Sync)*" ;;
+              review_requested) MSG="👀 *리뷰어로 지명되셨습니다!* (요청자: $AUTHOR)" ;;
+              closed)
+                if [ "${{ github.event.pull_request.merged }}" == "true" ]; then MSG="✅ *머지 완료! 고생하셨습니다.*";
+                else MSG="🗑️ *PR이 머지 없이 닫혔습니다.*"; fi ;;
+            esac
+          elif [ "${{ github.event_name }}" == "pull_request_review" ]; then
+            case "${{ github.event.review.state }}" in
+              approved) MSG="👍 *리뷰 승인 (Approved)*" ;;
+              changes_requested) MSG="🛠️ *수정 요청 (Changes Requested)*" ;;
+              commented) MSG="💬 *코드 리뷰 댓글*" ;;
+            esac
+          elif [ "${{ github.event_name }}" == "issue_comment" ]; then
+            MSG="💬 *새로운 댓글 등록*"
           fi
 
-          # JSON 데이터 생성
-          JSON_PAYLOAD=$(cat <<EOF
-          {
-            "text": "$MSG\n\n* **제목**: $PR_TITLE\n* **작성자**: $PR_AUTHOR\n* **바로가기**: $PR_URL"
-          }
+          FULL_MSG=$(cat <<EOF
+          🎨 *[FE]* $MSG
+
+          📌 *$PR_TITLE*
+          - 작성자: $AUTHOR
+          - 바로가기: $PR_URL
           EOF
           )
 
-          # Google Chat Webhook 호출
+          JSON_PAYLOAD=$(jq -n --arg txt "$FULL_MSG" '{text: $txt}')
+
+          # 구글 챗 전송
           curl -X POST -H "Content-Type: application/json; charset=UTF-8" \
             -d "$JSON_PAYLOAD" \
-            "${{ secrets.GOOGLE_CHAT_WEBHOOK_URL }}"
+            "${{ secrets.GOOGLE_CHAT_WEBHOOK }}"

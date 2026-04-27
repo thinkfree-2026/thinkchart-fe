@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: 'ko-KR'
+reviews:
+  profile: chill
+  poem: false
+  sequence_diagrams: true
+  path_filters:
+    - '!**/.yarn/**'
+    - '!**/*.xml'
+    - '!**/dist/**'
+    - '!**/build/**'
+    - '!**/coverage/**'
+    - '!**/*.{svg,png,jpg,gif}'
+    - '!**/*.lock'
+  path_instructions:
+    - path: '**/*.{ts,tsx}'
+      instructions: |
+        You are a senior frontend reviewer. Review based on "Easy-to-change code" principles.
+
+        1. Fundamentals:
+           - Readability: Logical top-to-bottom flow, no magic numbers.
+           - Predictability: Names match behavior, no hidden side effects.
+           - Cohesion: Group by domain/feature, keep related logic together.
+           - Coupling: Minimize ripple effects and avoid excessive prop drilling.
+
+        2. UI & DOM Safety:
+           - Maintainability: Flag repeated Tailwind groups or overlong class strings.
+           - Safety: Check event listener cleanups and unsafe non-null assertions (!).
+           - Performance: Identify unnecessary re-renders or repeated DOM queries.
+
+        3. Review Strategy:
+           - Trade-offs: Always explain *why* a change helps and mention brief trade-offs.
+           - Style: Provide practical, line-level suggestions. Be concise and constructive.
