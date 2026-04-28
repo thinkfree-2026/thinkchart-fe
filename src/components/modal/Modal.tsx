@@ -26,8 +26,6 @@ export const Modal = ({ width = 'w-[1100px]', height = 'h-[720px]', children }: 
     if (!inside) modal.close();
   };
 
-  console.log('childdd:::: ', children);
-
   return (
     <dialog
       id="modal"
