@@ -110,7 +110,7 @@ export function Fragment(props) {
   const fragment = document.createDocumentFragment();
 
   // props.children이 단일 노드일 수도, 배열일 수도 있으므로 안전하게 배열로 만들어 평탄화
-  if (props && props.children) {
+  if (props && props.children !== null && props.children !== undefined) {
     const childrenArray = Array.isArray(props.children) ? props.children : [props.children];
     appendChildren(fragment, childrenArray.flat(Infinity));
   }
