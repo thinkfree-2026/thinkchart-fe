@@ -1,20 +1,23 @@
+import type { ChildrenType } from '../../types';
+
 type ModalProps = {
+  id: string;
   width?: string;
   height?: string;
-  children?: HTMLElement;
+  children?: ChildrenType;
 };
 
-export const openModal = () => {
-  const modal = document.getElementById('modal') as HTMLDialogElement | null;
+export const openModal = (id: string) => {
+  const modal = document.getElementById(`modal-${id}`) as HTMLDialogElement | null;
   modal?.showModal();
 };
 
-export const closeModal = () => {
-  const modal = document.getElementById('modal') as HTMLDialogElement | null;
-  modal?.close();
-};
+export const Modal = ({ id, width = 'w-[1100px]', height = 'h-[720px]', children }: ModalProps) => {
+  const closeModal = () => {
+    const modal = document.getElementById(`modal-${id}`) as HTMLDialogElement | null;
+    modal?.close();
+  };
 
-export const Modal = ({ width = 'w-[1100px]', height = 'h-[720px]', children }: ModalProps) => {
   const handleCloseButtonClick = () => {
     closeModal();
   };
@@ -34,7 +37,7 @@ export const Modal = ({ width = 'w-[1100px]', height = 'h-[720px]', children }: 
 
   return (
     <dialog
-      id="modal"
+      id={`modal-${id}`}
       className={`${width} ${height} relative m-auto max-h-[90vh] max-w-[95vw] rounded-[24px] bg-white/80 p-10 shadow-2xl backdrop:bg-black/40 backdrop:backdrop-blur-xs`}
       onclick={handleModalBackdropClick}
     >
