@@ -8,7 +8,13 @@
 export function createElement(tag, props, ...children) {
   // 태그가 커스텀 컴포넌트(함수)인 경우
   if (typeof tag === 'function') {
-    return tag(props, ...children);
+    const componentProps = props || {};
+
+    if (children.length > 0) {
+      componentProps.children = children.length === 1 ? children[0] : children;
+    }
+
+    return tag(componentProps);
   }
 
   // SVG 요소인지 확인
@@ -96,13 +102,18 @@ function appendChildren(element, children) {
 }
 
 /**
- * JSX Fragment(<></>)를 위한 DocumentFragment 생성 함수입니다.
- * @param {any} _props
- * @param {...any} children
+ * 렌더링되지 않는 빈 껍데기 노드를 생성합니다. (<></>)
+ * @param {Object} props
  * @returns {DocumentFragment}
  */
-export function Fragment(_props, ...children) {
+export function Fragment(props) {
   const fragment = document.createDocumentFragment();
-  appendChildren(fragment, children.flat(Infinity));
+
+  // props.children이 단일 노드일 수도, 배열일 수도 있으므로 안전하게 배열로 만들어 평탄화
+  if (props && props.children !== null && props.children !== undefined) {
+    const childrenArray = Array.isArray(props.children) ? props.children : [props.children];
+    appendChildren(fragment, childrenArray.flat(Infinity));
+  }
+
   return fragment;
 }
