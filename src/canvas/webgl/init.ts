@@ -66,14 +66,14 @@ export const initWebGL = (canvas: HTMLCanvasElement): { gl: WebGLRenderingContex
   // 셰이더 컴파일 헬퍼 함수
   const compileShader = (type: number, source: string) => {
     const shader = gl.createShader(type)!;
+    if (shader == null) {
+      throw new Error('셰이더 생성 실패');
+    }
 
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
 
-    if (
-      gl.getShaderParameter(shader, gl.COMPILE_STATUS) === undefined ||
-      gl.getShaderParameter(shader, gl.COMPILE_STATUS) === null
-    ) {
+    if (gl.getShaderParameter(shader, gl.COMPILE_STATUS) !== true) {
       console.error(gl.getShaderInfoLog(shader));
       gl.deleteShader(shader);
       throw new Error('셰이더 컴파일 실패');
@@ -85,14 +85,15 @@ export const initWebGL = (canvas: HTMLCanvasElement): { gl: WebGLRenderingContex
   const fragmentShader = compileShader(gl.FRAGMENT_SHADER, fragmentShaderConfig);
 
   const program = gl.createProgram();
+  if (program == null) {
+    throw new Error('WebGL 프로그램 생성 실패');
+  }
+
   gl.attachShader(program, vertexShader);
   gl.attachShader(program, fragmentShader);
   gl.linkProgram(program);
 
-  if (
-    gl.getProgramParameter(program, gl.LINK_STATUS) === undefined ||
-    gl.getProgramParameter(program, gl.LINK_STATUS) === null
-  ) {
+  if (gl.getProgramParameter(program, gl.LINK_STATUS) !== true) {
     throw new Error('WebGL 프로그램 링킹 실패');
   }
 
