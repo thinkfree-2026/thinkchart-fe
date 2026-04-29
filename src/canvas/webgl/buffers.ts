@@ -1,8 +1,8 @@
-export function setupInstancedBuffers(
+export const setupInstancedBuffers = (
   gl: WebGLRenderingContext,
   program: WebGLProgram,
   instanceData: Float32Array // [x, y, size, r, g, b, a, x, y, size, r, g, b, a, ...]
-) {
+) => {
   // WebGL 1.0에서 인스턴싱을 사용하기 위한 확장 기능 활성화
   const ext = gl.getExtension('ANGLE_instanced_arrays');
   if (!ext) throw new Error('인스턴싱을 지원하지 않는 브라우저입니다.');
@@ -45,4 +45,4 @@ export function setupInstancedBuffers(
   ext.vertexAttribDivisorANGLE(aInstanceColor, 1);
 
   return { instanceBuffer, ext };
-}
+};

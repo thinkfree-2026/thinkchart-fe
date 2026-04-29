@@ -58,7 +58,7 @@ const fragmentShaderConfig = `
 `;
 
 // WebGL 초기화 유틸리티
-export function initWebGL(canvas: HTMLCanvasElement): { gl: WebGLRenderingContext; program: WebGLProgram } {
+export const initWebGL = (canvas: HTMLCanvasElement): { gl: WebGLRenderingContext; program: WebGLProgram } => {
   const gl = canvas.getContext('webgl');
 
   if (!gl) throw new Error('WebGL을 지원하지 않는 브라우저입니다.');
@@ -101,4 +101,4 @@ export function initWebGL(canvas: HTMLCanvasElement): { gl: WebGLRenderingContex
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
   return { gl, program };
-}
+};
