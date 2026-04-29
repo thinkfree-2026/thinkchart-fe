@@ -1,12 +1,11 @@
-import { setupInteraction } from '../tools/index.ts';
-
-import { createEngine } from './engine.ts';
+import { createEngine } from './renderer/index.ts';
+import { setupInteraction } from './tools/index.ts';
 
 /**
  * 캔버스 컴포넌트
  * UI 렌더링 및 모듈(엔진, 인터랙션)의 생명주기 관리
  */
-export const Canvas = () => {
+const Canvas = () => {
   // 컴포넌트가 언마운트 될 때 실행할 클린업 함수 리스트
   const cleanupTasks: Array<() => void> = [];
 
@@ -37,3 +36,5 @@ export const Canvas = () => {
     />
   );
 };
+
+export default Canvas;

@@ -1,1 +1,1 @@
-export * from './renderer/canvas.tsx';
+export { default as Canvas } from './canvas.tsx';
