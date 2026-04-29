@@ -9,7 +9,7 @@ import { initWebGL } from '../webgl/index.ts';
 export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() => void>) => {
   const { gl, program } = initWebGL(canvas);
 
-  let projectionMatrix = Matrix3.projection(canvas.width, canvas.height);
+  let projectionMatrix = Matrix3.create();
   const viewMatrix = Matrix3.create();
   const finalMatrix = Matrix3.create();
 
@@ -50,14 +50,25 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     }
   };
 
+  const handleResize = (cssWidth: number, cssHeight: number) => {
+    const dpr = window.devicePixelRatio || 1;
+
+    // 캔버스 자체의 해상도 = 물리 픽셀
+    canvas.width = cssWidth * dpr;
+    canvas.height = cssHeight * dpr;
+
+    // WebGL 투영 행렬 = 마우스와 동일한 CSS 픽셀
+    projectionMatrix = Matrix3.projection(cssWidth, cssHeight);
+
+    requestRender();
+  };
+
+  handleResize(canvas.clientWidth || window.innerWidth, canvas.clientHeight || window.innerHeight);
+
   // 리사이즈 감지
   const resizeObserver = new ResizeObserver(entries => {
     const { width, height } = entries[0].contentRect;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    projectionMatrix = Matrix3.projection(width, height);
-    requestRender();
+    handleResize(width, height);
   });
   resizeObserver.observe(canvas);
 
