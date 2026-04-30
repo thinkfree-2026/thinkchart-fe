@@ -1,13 +1,21 @@
 import { Matrix3 } from '../core/index.ts';
 import { cameraStore } from '../store/index.ts';
-import { initWebGL } from '../webgl/index.ts';
+import { initWebGL, setupInstancedBuffers } from '../webgl/index.ts';
 
-/**
- * WebGL 렌더링 엔진
- * Store의 데이터를 읽어와 실제 WebGL 파이프라인 구동
- */
 export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() => void>) => {
   const { gl, program } = initWebGL(canvas);
+
+  // ==========================================
+  // 임시 원 1개 데이터 세팅
+  // ==========================================
+  const centerX = (canvas.clientWidth || window.innerWidth) / 2;
+  const centerY = (canvas.clientHeight || window.innerHeight) / 2;
+  const circleData = new Float32Array([centerX, centerY, 300.0, 99 / 255, 102 / 255, 241 / 255, 1.0]);
+
+  // ==========================================
+  // 임시 원을 위한 인스턴싱 버퍼 초기화 및 확장 기능
+  // ==========================================
+  const { ext } = setupInstancedBuffers(gl, program, circleData);
 
   let projectionMatrix = Matrix3.create();
   const viewMatrix = Matrix3.create();
@@ -28,7 +36,7 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.useProgram(program);
 
-    const camera = cameraStore.getState();
+    const camera = cameraStore.state.camera;
 
     Matrix3.translateAndScale(viewMatrix, camera.x, camera.y, camera.scale);
 
@@ -41,6 +49,11 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     gl.uniformMatrix3fv(uMatrixLoc, false, finalMatrix);
     gl.uniform1f(uZoomLoc, camera.scale);
     gl.uniform1f(uDprLoc, window.devicePixelRatio || 1);
+
+    // ==========================================
+    // 임시 원 인스턴스 1개를 그리는 로직
+    // ==========================================
+    ext.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, 1);
   };
 
   const requestRender = () => {
@@ -73,9 +86,9 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
   resizeObserver.observe(canvas);
 
   // 카메라 상태 구독
-  const unsubCamera = cameraStore.subscribe(requestRender);
+  const unsubCamera = cameraStore.subscribe('camera', requestRender);
 
-  // 언마운트 시 엔진 정리
+  // 엔진 정리 Cleanup 콜백 함수
   cleanupTasks.push(() => {
     resizeObserver.disconnect();
     unsubCamera();
