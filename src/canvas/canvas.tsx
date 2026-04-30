@@ -10,7 +10,13 @@ export const Canvas = () => {
   };
 
   const cleanupCallback = () => {
-    cleanupTasks.forEach(task => task());
+    cleanupTasks.forEach(task => {
+      try {
+        task();
+      } catch (error) {
+        console.error('Canvas cleanup task failed:', error);
+      }
+    });
     cleanupTasks.length = 0;
   };
 
