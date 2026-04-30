@@ -45,6 +45,11 @@ function applyProps(element, props) {
     const value = props[key];
     if (value === undefined || value === null) return;
 
+    if (key === 'ref' && value && typeof value === 'object') {
+      value.current = element;
+      return;
+    }
+
     // className 처리 (SVG 호환성을 위해 setAttribute 사용)
     if (key === 'className') {
       element.setAttribute('class', String(value));
