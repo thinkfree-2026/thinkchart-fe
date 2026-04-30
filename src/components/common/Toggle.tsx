@@ -1,4 +1,4 @@
-import { createRef } from '../../utils/core/ref.ts';
+import { createRef } from '../../utils/index.ts';
 
 type ToggleProps = {
   id: string;
