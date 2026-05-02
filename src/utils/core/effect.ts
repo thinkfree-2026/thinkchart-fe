@@ -20,28 +20,40 @@ export const createEffect = (node: Node, callback: (element: Node) => void | (()
   }
 };
 
+const containsNode = (target: Node, node: Node) => {
+  return target === node || target.contains(node);
+};
+
 const observer = new MutationObserver(mutations => {
+  if (initializeCallbacks.size === 0 && cleanupCallbacks.size === 0) return;
+
   mutations.forEach(mutation => {
-    mutation.addedNodes.forEach(node => {
-      if (initializeCallbacks.has(node)) {
-        const onInitialize = initializeCallbacks.get(node)!;
-        const onCleanup = onInitialize(node); // Initialize 콜백 함수 실행
+    mutation.addedNodes.forEach(addedNode => {
+      initializeCallbacks.forEach((initializeCallback, targetNode) => {
+        if (containsNode(addedNode, targetNode)) {
+          const onCleanup = initializeCallback(targetNode); // Initialize 콜백 함수 실행
 
-        if (typeof onCleanup === 'function') {
-          cleanupCallbacks.set(node, onCleanup);
+          if (typeof onCleanup === 'function') {
+            cleanupCallbacks.set(targetNode, onCleanup);
+          }
+
+          initializeCallbacks.delete(targetNode);
         }
-
-        initializeCallbacks.delete(node);
-      }
+      });
     });
 
-    mutation.removedNodes.forEach(node => {
-      if (cleanupCallbacks.has(node)) {
-        cleanupCallbacks.get(node)!(); // Cleanup 콜백 함수 실행
-        cleanupCallbacks.delete(node);
-      }
+    mutation.removedNodes.forEach(removedNode => {
+      cleanupCallbacks.forEach((cleanupCallback, targetNode) => {
+        if (containsNode(removedNode, targetNode)) {
+          cleanupCallback(); // Cleanup 콜백 함수 실행
+          cleanupCallbacks.delete(targetNode);
+        }
+      });
     });
   });
 });
 
-observer.observe(document.body, { childList: true, subtree: true });
+observer.observe(document.body, {
+  childList: true,
+  subtree: true,
+});
