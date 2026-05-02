@@ -30,7 +30,7 @@ const observer = new MutationObserver(mutations => {
   mutations.forEach(mutation => {
     mutation.addedNodes.forEach(addedNode => {
       initializeCallbacks.forEach((initializeCallback, targetNode) => {
-        if (containsNode(addedNode, targetNode)) {
+        if (targetNode.isConnected && containsNode(addedNode, targetNode)) {
           const onCleanup = initializeCallback(targetNode); // Initialize 콜백 함수 실행
 
           if (typeof onCleanup === 'function') {
@@ -44,7 +44,7 @@ const observer = new MutationObserver(mutations => {
 
     mutation.removedNodes.forEach(removedNode => {
       cleanupCallbacks.forEach((cleanupCallback, targetNode) => {
-        if (containsNode(removedNode, targetNode)) {
+        if (!targetNode.isConnected && containsNode(removedNode, targetNode)) {
           cleanupCallback(); // Cleanup 콜백 함수 실행
           cleanupCallbacks.delete(targetNode);
         }
