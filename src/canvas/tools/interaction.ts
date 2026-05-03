@@ -12,8 +12,8 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       canvas.style.cursor = 'grabbing';
     }
 
-    // 원 생성 (Shift + 좌클릭)
-    else if (e.button === 0 && e.shiftKey) {
+    // 원 생성 (좌클릭)
+    else if (e.button === 0) {
       const { camera } = cameraStore.state;
       const worldPos = screenToWorld(e.clientX, e.clientY, camera);
 
