@@ -6,7 +6,7 @@ const createGuideCircleStore = () => {
     guideCircle: {
       x: 0,
       y: 0,
-      visible: false,
+      isVisible: false,
     },
   });
 
@@ -14,10 +14,10 @@ const createGuideCircleStore = () => {
     state,
     subscribe,
     pan: (dx: number, dy: number) => {
-      state.guideCircle = { x: dx, y: dy, visible: true };
+      state.guideCircle = { x: dx, y: dy, isVisible: true };
     },
-    updateVisibility: (visible: boolean) => {
-      state.guideCircle = { ...state.guideCircle, visible };
+    updateVisibility: (isVisible: boolean) => {
+      state.guideCircle = { ...state.guideCircle, isVisible };
     },
   };
 };

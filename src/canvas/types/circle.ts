@@ -12,5 +12,5 @@ export type Circle = {
 export type GuideCircle = {
   x: number; // 가이드 원의 월드 X 좌표
   y: number; // 가이드 원의 월드 Y 좌표
-  visible: boolean; // 가이드 원의 화면 표시 여부
+  isVisible: boolean; // 가이드 원의 화면 표시 여부
 };
