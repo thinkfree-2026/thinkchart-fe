@@ -1,7 +1,8 @@
 import { createStore } from '../../utils/index.ts';
+import type { Camera } from '../types/index.ts';
 
 const createCameraStore = () => {
-  const { state, subscribe } = createStore({
+  const { state, subscribe } = createStore<{ camera: Camera }>({
     camera: {
       x: 0,
       y: 0,
