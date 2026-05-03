@@ -70,8 +70,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
   // 캔버스 벗어남
   const onPointerLeave = () => {
-    console.log('leave');
-    // guideCircleStore.updateVisibility(false);
+    guideCircleStore.updateVisibility(false);
   };
 
   // 이벤트 리스너 연결
