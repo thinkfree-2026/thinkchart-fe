@@ -59,6 +59,10 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     // 인스턴싱 드로우
     const count = circleStore.getCount();
     if (count > 0) {
+      // 가이드 원으로 인해 변경될 수 있는 index 0의 원본 데이터를 CPU에서 GPU로 복구
+      gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, instanceData.subarray(0, 7));
+
       ext.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, count);
     }
 
