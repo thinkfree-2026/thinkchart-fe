@@ -1,6 +1,5 @@
 import { Matrix3 } from '../core/index.ts';
-import { cameraStore, circleStore } from '../store/index.ts';
-import type { Circle } from '../types/index.ts';
+import { cameraStore, circleStore, MAX_CIRCLES } from '../store/index.ts';
 import { initWebGL, setupInstancedBuffers } from '../webgl/index.ts';
 
 export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() => void>) => {
@@ -12,7 +11,6 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
   const uDprLoc = gl.getUniformLocation(program, 'u_dpr');
 
   // 엔진 내부 상태 (State & Buffers)
-  const MAX_CIRCLES = 100000;
   const instanceData = new Float32Array(MAX_CIRCLES * 7); // x, y, size, r, g, b, a
   const { ext, instanceBuffer } = setupInstancedBuffers(gl, program, instanceData);
 
@@ -66,7 +64,8 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
   };
 
   // 버퍼 업데이트
-  const updateCircleBuffers = (circles: Circle[]) => {
+  const updateCircleBuffers = () => {
+    const { circles } = circleStore.state;
     const newCount = circles.length;
 
     // 데이터가 초기화되었을 경우 추적 초기화
@@ -100,10 +99,10 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
   };
 
   // 카메라 이동 감지
-  const unsubCamera = cameraStore.subscribe('camera', requestRender);
+  const unsubscribeCamera = cameraStore.subscribe('camera', requestRender);
 
   // 원 생성 감지
-  const unsubCircle = circleStore.subscribe('circle', updateCircleBuffers);
+  const unsubscribeCircle = circleStore.subscribe('version', updateCircleBuffers);
 
   // 캔버스 크기 변경 감지
   const resizeObserver = new ResizeObserver(entries => {
@@ -115,8 +114,8 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
   // 요소가 제거될 때 메모리 해제
   cleanupTasks.push(() => {
     resizeObserver.disconnect();
-    unsubCamera();
-    unsubCircle();
+    unsubscribeCamera();
+    unsubscribeCircle();
   });
 
   // 렌더링 시 최초 1회 실행
