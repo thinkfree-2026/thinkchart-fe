@@ -1,43 +1,50 @@
 import { Matrix3 } from '../core/index.ts';
-import { cameraStore } from '../store/index.ts';
+import { cameraStore, circleStore } from '../store/index.ts';
+import type { Circle } from '../types/index.ts';
 import { initWebGL, setupInstancedBuffers } from '../webgl/index.ts';
 
 export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() => void>) => {
+  // WebGL 컨텍스트 및 프로그램 초기화
   const { gl, program } = initWebGL(canvas);
-
-  // ==========================================
-  // 임시 원 1개 데이터 세팅
-  // ==========================================
-  const centerX = (canvas.clientWidth || window.innerWidth) / 2;
-  const centerY = (canvas.clientHeight || window.innerHeight) / 2;
-  const circleData = new Float32Array([centerX, centerY, 300.0, 99 / 255, 102 / 255, 241 / 255, 1.0]);
-
-  // ==========================================
-  // 임시 원을 위한 인스턴싱 버퍼 초기화 및 확장 기능
-  // ==========================================
-  const { ext } = setupInstancedBuffers(gl, program, circleData);
-
-  let projectionMatrix = Matrix3.create();
-  const viewMatrix = Matrix3.create();
-  const finalMatrix = Matrix3.create();
 
   const uMatrixLoc = gl.getUniformLocation(program, 'u_matrix');
   const uZoomLoc = gl.getUniformLocation(program, 'u_zoom');
   const uDprLoc = gl.getUniformLocation(program, 'u_dpr');
 
-  let isRenderPending = false;
+  // 엔진 내부 상태 (State & Buffers)
+  const MAX_CIRCLES = 100000;
+  const instanceData = new Float32Array(MAX_CIRCLES * 7); // x, y, size, r, g, b, a
+  const { ext, instanceBuffer } = setupInstancedBuffers(gl, program, instanceData);
 
+  let processedCircleCount = 0; // GPU에 전송 완료된 원의 개수
+  let isRenderPending = false; // 중복 렌더링 방지 플래그
+
+  // 행렬 생성
+  let projectionMatrix = Matrix3.create();
+  const viewMatrix = Matrix3.create();
+  const finalMatrix = Matrix3.create();
+
+  // 프레임 최적화 렌더링
+  const requestRender = () => {
+    if (!isRenderPending) {
+      isRenderPending = true;
+      requestAnimationFrame(render);
+    }
+  };
+
+  // 캔버스 렌더링
   const render = () => {
     isRenderPending = false;
     if (gl == null || projectionMatrix == null) return;
 
+    // 캔버스 비우기
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(0.0, 0.0, 0.0, 0.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.useProgram(program);
 
-    const camera = cameraStore.state.camera;
-
+    // 카메라 행렬 생성
+    const { camera } = cameraStore.state;
     Matrix3.translateAndScale(viewMatrix, camera.x, camera.y, camera.scale);
 
     finalMatrix[0] = projectionMatrix[0] * viewMatrix[0];
@@ -46,54 +53,72 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     finalMatrix[7] = projectionMatrix[4] * viewMatrix[7] + projectionMatrix[7];
     finalMatrix[8] = 1.0;
 
+    // GPU로 유니폼 변수 전송
     gl.uniformMatrix3fv(uMatrixLoc, false, finalMatrix);
     gl.uniform1f(uZoomLoc, camera.scale);
     gl.uniform1f(uDprLoc, window.devicePixelRatio || 1);
 
-    // ==========================================
-    // 임시 원 인스턴스 1개를 그리는 로직
-    // ==========================================
-    ext.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, 1);
-  };
-
-  const requestRender = () => {
-    if (!isRenderPending) {
-      isRenderPending = true;
-      requestAnimationFrame(render);
+    // 인스턴싱 드로우
+    const count = circleStore.getCount();
+    if (count > 0) {
+      ext.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, count);
     }
   };
 
-  const handleResize = (cssWidth: number, cssHeight: number) => {
-    const dpr = window.devicePixelRatio || 1;
+  // 버퍼 업데이트
+  const updateCircleBuffers = (circles: Circle[]) => {
+    const newCount = circles.length;
 
-    // 캔버스 자체의 해상도 = 물리 픽셀
-    canvas.width = cssWidth * dpr;
-    canvas.height = cssHeight * dpr;
+    // 데이터가 초기화되었을 경우 추적 초기화
+    if (newCount < processedCircleCount) processedCircleCount = 0;
+    if (newCount > MAX_CIRCLES || newCount === processedCircleCount) return;
 
-    // WebGL 투영 행렬 = 마우스와 동일한 CSS 픽셀
-    projectionMatrix = Matrix3.projection(cssWidth, cssHeight);
+    gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
 
+    // 새로 추가된 원만 부분 업데이트
+    for (let i = processedCircleCount; i < newCount; i++) {
+      const circle = circles[i];
+      const offset = i * 7;
+
+      instanceData.set([circle.x, circle.y, circle.size, circle.r, circle.g, circle.b, circle.a], offset);
+
+      const newData = new Float32Array([circle.x, circle.y, circle.size, circle.r, circle.g, circle.b, circle.a]);
+      gl.bufferSubData(gl.ARRAY_BUFFER, offset * Float32Array.BYTES_PER_ELEMENT, newData);
+    }
+
+    processedCircleCount = newCount;
     requestRender();
   };
 
-  handleResize(canvas.clientWidth || window.innerWidth, canvas.clientHeight || window.innerHeight);
+  // 캔버스 리사이즈
+  const handleResize = (cssWidth: number, cssHeight: number) => {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = cssWidth * dpr;
+    canvas.height = cssHeight * dpr;
+    projectionMatrix = Matrix3.projection(cssWidth, cssHeight);
+    requestRender();
+  };
 
-  // 리사이즈 감지
+  // 카메라 이동 감지
+  const unsubCamera = cameraStore.subscribe('camera', requestRender);
+
+  // 원 생성 감지
+  const unsubCircle = circleStore.subscribe('circle', updateCircleBuffers);
+
+  // 캔버스 크기 변경 감지
   const resizeObserver = new ResizeObserver(entries => {
     const { width, height } = entries[0].contentRect;
     handleResize(width, height);
   });
   resizeObserver.observe(canvas);
 
-  // 카메라 상태 구독
-  const unsubCamera = cameraStore.subscribe('camera', requestRender);
-
-  // 엔진 정리 Cleanup 콜백 함수
+  // 요소가 제거될 때 메모리 해제
   cleanupTasks.push(() => {
     resizeObserver.disconnect();
     unsubCamera();
+    unsubCircle();
   });
 
-  // 렌더링 시 최초 한 번 실행
-  requestRender();
+  // 렌더링 시 최초 1회 실행
+  handleResize(canvas.clientWidth || window.innerWidth, canvas.clientHeight || window.innerHeight);
 };
