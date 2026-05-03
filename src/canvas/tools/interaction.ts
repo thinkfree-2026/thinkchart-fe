@@ -83,7 +83,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   // 이벤트 리스너 제거
   cleanupTasks.push(() => {
     canvas.removeEventListener('pointerdown', onPointerDown);
-    window.removeEventListener('pointermove', onPointerMove);
+    canvas.removeEventListener('pointermove', onPointerMove);
     window.removeEventListener('pointerup', onPointerUp);
     canvas.removeEventListener('wheel', onWheel);
     canvas.removeEventListener('pointerleave', onPointerLeave);
