@@ -1,15 +1,16 @@
 import { screenToWorld } from '../core/index.ts';
-import { cameraStore, circleStore } from '../store/index.ts';
+import { cameraStore, circleStore, guideCircleStore } from '../store/index.ts';
 
 export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<() => void>) => {
   let isDragging = false;
 
-  // 카메라 이동 시작 및 원 생성
+  // 카메라 이동 시작
   const onPointerDown = (e: PointerEvent) => {
     // 카메라 이동 (마우스 휠 클릭 또는 Ctrl+좌클릭)
     if (e.button === 1 || (e.button === 0 && e.ctrlKey)) {
       isDragging = true;
       canvas.style.cursor = 'grabbing';
+      guideCircleStore.updateVisibility(false);
     }
 
     // 원 생성 (좌클릭)
@@ -31,8 +32,16 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
   // 카메라 이동
   const onPointerMove = (e: PointerEvent) => {
-    if (!isDragging) return;
-    cameraStore.pan(e.movementX, e.movementY);
+    if (isDragging) {
+      cameraStore.pan(e.movementX, e.movementY);
+      return;
+    }
+
+    // 가이드 UI 위치 업데이트
+    const { camera } = cameraStore.state;
+    const worldPos = screenToWorld(e.clientX, e.clientY, camera);
+
+    guideCircleStore.pan(worldPos.x, worldPos.y);
   };
 
   // 카메라 이동 종료
@@ -51,15 +60,26 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
       cameraStore.zoom(zoomFactor, e.clientX, e.clientY);
     } else {
+      const { camera } = cameraStore.state;
+      const worldPos = screenToWorld(e.clientX, e.clientY, camera);
+
       cameraStore.pan(-e.deltaX, -e.deltaY);
+      guideCircleStore.pan(worldPos.x, worldPos.y);
     }
+  };
+
+  // 캔버스 벗어남
+  const onPointerLeave = () => {
+    console.log('leave');
+    // guideCircleStore.updateVisibility(false);
   };
 
   // 이벤트 리스너 연결
   canvas.addEventListener('pointerdown', onPointerDown);
-  window.addEventListener('pointermove', onPointerMove);
+  canvas.addEventListener('pointermove', onPointerMove);
   window.addEventListener('pointerup', onPointerUp);
   canvas.addEventListener('wheel', onWheel, { passive: false });
+  canvas.addEventListener('pointerleave', onPointerLeave);
 
   // 이벤트 리스너 제거
   cleanupTasks.push(() => {
@@ -67,5 +87,6 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     window.removeEventListener('pointermove', onPointerMove);
     window.removeEventListener('pointerup', onPointerUp);
     canvas.removeEventListener('wheel', onWheel);
+    canvas.removeEventListener('pointerleave', onPointerLeave);
   });
 };

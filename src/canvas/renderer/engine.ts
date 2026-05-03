@@ -1,5 +1,5 @@
 import { Matrix3 } from '../core/index.ts';
-import { cameraStore, circleStore, MAX_CIRCLES } from '../store/index.ts';
+import { cameraStore, circleStore, guideCircleStore, MAX_CIRCLES } from '../store/index.ts';
 import { initWebGL, setupInstancedBuffers } from '../webgl/index.ts';
 
 export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() => void>) => {
@@ -61,6 +61,28 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     if (count > 0) {
       ext.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, count);
     }
+
+    // 가이드 원 드로우
+    const { guideCircle } = guideCircleStore.state;
+    if (guideCircle.isVisible) {
+      // 임시로 데이터 배열의 첫 번째 슬롯에 가이드 데이터 채웁니다.
+      gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
+
+      const guideCircleData = new Float32Array([
+        guideCircle.x,
+        guideCircle.y,
+        100,
+        99 / 255,
+        102 / 255,
+        241 / 255,
+        0.8,
+      ]);
+
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, guideCircleData);
+
+      // 인스턴스 1개만 드로우
+      ext.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, 1);
+    }
   };
 
   // 버퍼 업데이트
@@ -104,6 +126,9 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
   // 원 생성 감지
   const unsubscribeCircle = circleStore.subscribe('version', updateCircleBuffers);
 
+  // 가이드 원 이동 (마우스 이동) 감지
+  const unsubscribeGuide = guideCircleStore.subscribe('guideCircle', requestRender);
+
   // 캔버스 크기 변경 감지
   const resizeObserver = new ResizeObserver(entries => {
     const { width, height } = entries[0].contentRect;
@@ -116,6 +141,7 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     resizeObserver.disconnect();
     unsubscribeCamera();
     unsubscribeCircle();
+    unsubscribeGuide();
   });
 
   // 렌더링 시 최초 1회 실행
