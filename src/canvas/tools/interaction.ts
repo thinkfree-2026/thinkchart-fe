@@ -1,40 +1,10 @@
 import { screenToWorld } from '../core/index.ts';
 import { cameraStore, circleStore, guideCircleStore } from '../store/index.ts';
 
+import { increaseCounter } from './increaseCounter.ts';
+
 const CIRCLE_SIZE = 100;
 const CIRCLE_COLOR = { r: 99 / 255, g: 102 / 255, b: 241 / 255 };
-
-const increaseCounter = (callbackFn: (currentCount: number) => void) => {
-  let count = 1;
-  let intervalId: number | null = null;
-
-  return {
-    get currentCount() {
-      return count;
-    },
-    start() {
-      if (intervalId !== null) return;
-      intervalId = window.setInterval(() => {
-        count += 0.5;
-        callbackFn(count);
-      }, 1000);
-    },
-    stop() {
-      if (intervalId !== null) {
-        window.clearInterval(intervalId);
-        intervalId = null;
-      }
-      const currentCount = count;
-      count = 1; // 카운트 초기화
-      return currentCount;
-    },
-    cancel() {
-      if (intervalId !== null) window.clearInterval(intervalId);
-      intervalId = null;
-      count = 1;
-    },
-  };
-};
 
 export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<() => void>) => {
   let isDragging = false;
