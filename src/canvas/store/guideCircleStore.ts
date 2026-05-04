@@ -1,34 +1,47 @@
 import { createStore } from '../../utils/index.ts';
-import type { Circle } from '../types/index.ts';
+import type { Circle, GuideCircle } from '../types/index.ts';
 
 const createGuideCircleStore = () => {
-  const { state, subscribe } = createStore<{ guideCircle: Circle | null; isVisible: boolean }>({
-    guideCircle: null,
-    isVisible: false,
+  const { state, subscribe } = createStore<{ guideCircle: GuideCircle }>({
+    guideCircle: {
+      circle: null,
+      isVisible: false,
+    },
   });
 
   return {
     state,
     subscribe,
-    createGuideCircle: (guideCircle: Circle) => {
-      state.guideCircle = guideCircle;
-      state.isVisible = true;
+    createGuideCircle: (circle: Circle) => {
+      state.guideCircle = {
+        circle,
+        isVisible: true,
+      };
     },
     pan: (dx: number, dy: number) => {
+      if (!state.guideCircle.circle) return;
+
       state.guideCircle = {
-        ...state.guideCircle!,
-        x: dx,
-        y: dy,
+        circle: {
+          ...state.guideCircle.circle,
+          x: dx,
+          y: dy,
+        },
+        isVisible: true,
       };
-      state.isVisible = true;
     },
     updateVisibility: (isVisible: boolean) => {
-      state.isVisible = isVisible;
+      state.guideCircle.isVisible = isVisible;
     },
     increaseSize: (size: number) => {
+      if (!state.guideCircle.circle) return;
+
       state.guideCircle = {
-        ...state.guideCircle!,
-        size,
+        circle: {
+          ...state.guideCircle.circle,
+          size,
+        },
+        isVisible: true,
       };
     },
   };

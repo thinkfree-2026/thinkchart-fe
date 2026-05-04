@@ -13,7 +13,6 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     if (e.button === 1 || (e.button === 0 && e.ctrlKey)) {
       isDragging = true;
       canvas.style.cursor = 'grabbing';
-      guideCircleStore.updateVisibility(false);
     }
   };
 
@@ -42,8 +41,10 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     isDragging = false;
     canvas.style.cursor = 'default';
 
+    console.log(e.button, e.ctrlKey);
+
     // 원 생성 (좌클릭)
-    if (e.button === 0) {
+    if (e.button === 0 && !e.ctrlKey) {
       const { camera } = cameraStore.state;
       const worldPos = screenToWorld(e.clientX, e.clientY, camera);
 
@@ -67,10 +68,11 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
       cameraStore.zoom(zoomFactor, e.clientX, e.clientY);
     } else {
+      cameraStore.pan(-e.deltaX, -e.deltaY);
+
       const { camera } = cameraStore.state;
       const worldPos = screenToWorld(e.clientX, e.clientY, camera);
 
-      cameraStore.pan(-e.deltaX, -e.deltaY);
       guideCircleStore.pan(worldPos.x, worldPos.y);
     }
   };
