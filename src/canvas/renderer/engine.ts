@@ -67,19 +67,19 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     }
 
     // 가이드 원 드로우
-    const { guideCircle } = guideCircleStore.state;
-    if (guideCircle.isVisible) {
+    const { guideCircle, isVisible } = guideCircleStore.state;
+    if (guideCircle && isVisible) {
       // 임시로 데이터 배열의 첫 번째 슬롯에 가이드 데이터 채웁니다.
       gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
 
       const guideCircleData = new Float32Array([
         guideCircle.x,
         guideCircle.y,
-        100,
-        99 / 255,
-        102 / 255,
-        241 / 255,
-        0.8,
+        guideCircle.size,
+        guideCircle.r,
+        guideCircle.g,
+        guideCircle.b,
+        guideCircle.a,
       ]);
 
       gl.bufferSubData(gl.ARRAY_BUFFER, 0, guideCircleData);

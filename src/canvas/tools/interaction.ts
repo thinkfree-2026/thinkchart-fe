@@ -1,6 +1,9 @@
 import { screenToWorld } from '../core/index.ts';
 import { cameraStore, circleStore, guideCircleStore } from '../store/index.ts';
 
+const CREATE_SIZE = 100;
+const CREATE_COLOR = { r: 99 / 255, g: 102 / 255, b: 241 / 255 };
+
 export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<() => void>) => {
   let isDragging = false;
 
@@ -12,22 +15,6 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       canvas.style.cursor = 'grabbing';
       guideCircleStore.updateVisibility(false);
     }
-
-    // 원 생성 (좌클릭)
-    else if (e.button === 0) {
-      const { camera } = cameraStore.state;
-      const worldPos = screenToWorld(e.clientX, e.clientY, camera);
-
-      circleStore.addCircle({
-        x: worldPos.x,
-        y: worldPos.y,
-        size: 100,
-        r: 99 / 255,
-        g: 102 / 255,
-        b: 241 / 255,
-        a: 1.0,
-      });
-    }
   };
 
   // 카메라 이동
@@ -37,17 +24,37 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       return;
     }
 
-    // 가이드 UI 위치 업데이트
     const { camera } = cameraStore.state;
     const worldPos = screenToWorld(e.clientX, e.clientY, camera);
 
-    guideCircleStore.pan(worldPos.x, worldPos.y);
+    // 가이드 원 생성 (좌클릭)
+    guideCircleStore.createGuideCircle({
+      x: worldPos.x,
+      y: worldPos.y,
+      size: CREATE_SIZE,
+      ...CREATE_COLOR,
+      a: 0.7,
+    });
   };
 
   // 카메라 이동 종료
-  const onPointerUp = () => {
+  const onPointerUp = (e: PointerEvent) => {
     isDragging = false;
     canvas.style.cursor = 'default';
+
+    // 원 생성 (좌클릭)
+    if (e.button === 0) {
+      const { camera } = cameraStore.state;
+      const worldPos = screenToWorld(e.clientX, e.clientY, camera);
+
+      circleStore.addCircle({
+        x: worldPos.x,
+        y: worldPos.y,
+        size: CREATE_SIZE,
+        ...CREATE_COLOR,
+        a: 1.0,
+      });
+    }
   };
 
   // 카메라 줌 인/아웃
