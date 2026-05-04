@@ -1,5 +1,5 @@
 import { Matrix3 } from '../core/index.ts';
-import { cameraStore, circleStore, MAX_CIRCLES } from '../store/index.ts';
+import { cameraStore, circleStore, guideCircleStore, MAX_CIRCLES } from '../store/index.ts';
 import { initWebGL, setupInstancedBuffers } from '../webgl/index.ts';
 
 export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() => void>) => {
@@ -59,7 +59,25 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     // 인스턴싱 드로우
     const count = circleStore.getCount();
     if (count > 0) {
+      // 가이드 원으로 인해 변경될 수 있는 index 0의 원본 데이터를 CPU에서 GPU로 복구
+      gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, instanceData.subarray(0, 7));
+
       ext.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, count);
+    }
+
+    // 가이드 원 드로우
+    const { guideCircle } = guideCircleStore.state;
+    if (guideCircle.circle && guideCircle.isVisible) {
+      // 임시로 데이터 배열의 첫 번째 슬롯에 가이드 데이터 채웁니다.
+      gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
+
+      const guideCircleData = new Float32Array(Object.values(guideCircle.circle));
+
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, guideCircleData);
+
+      // 인스턴스 1개만 드로우
+      ext.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, 1);
     }
   };
 
@@ -104,6 +122,9 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
   // 원 생성 감지
   const unsubscribeCircle = circleStore.subscribe('version', updateCircleBuffers);
 
+  // 가이드 원 이동 (마우스 이동) 감지
+  const unsubscribeGuide = guideCircleStore.subscribe('guideCircle', requestRender);
+
   // 캔버스 크기 변경 감지
   const resizeObserver = new ResizeObserver(entries => {
     const { width, height } = entries[0].contentRect;
@@ -116,6 +137,7 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     resizeObserver.disconnect();
     unsubscribeCamera();
     unsubscribeCircle();
+    unsubscribeGuide();
   });
 
   // 렌더링 시 최초 1회 실행
