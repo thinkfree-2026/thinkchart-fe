@@ -33,7 +33,7 @@ const createGuideCircleStore = () => {
     updateVisibility: (isVisible: boolean) => {
       state.guideCircle.isVisible = isVisible;
     },
-    increaseSize: (size: number) => {
+    updateSize: (size: number) => {
       if (!state.guideCircle.circle) return;
 
       state.guideCircle = {
