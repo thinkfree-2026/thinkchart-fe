@@ -5,13 +5,30 @@ import { increaseCounter } from './increaseCounter.ts';
 
 const CIRCLE_SIZE = 100;
 const CIRCLE_COLOR = { r: 99 / 255, g: 102 / 255, b: 241 / 255 };
+const GUIDE_CIRCLE_COLOR = { r: 0, g: 0, b: 0 };
+const GUIDE_CIRCLE_OPACITY = 0.05;
 
 export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<() => void>) => {
   let isDragging = false;
 
-  const increaseGuideCircle = increaseCounter(currentCount => {
-    guideCircleStore.updateSize(CIRCLE_SIZE * currentCount);
-  });
+  const currentMouse = { x: 0, y: 0 };
+  const increaseGuideCircle = increaseCounter(
+    currentCount => {
+      guideCircleStore.updateSize(CIRCLE_SIZE * currentCount);
+    },
+    (pulseSize, currentCount) => {
+      const { camera } = cameraStore.state;
+      const worldPos = screenToWorld(currentMouse.x, currentMouse.y, camera);
+
+      guideCircleStore.createGuideCircle({
+        x: worldPos.x,
+        y: worldPos.y,
+        size: CIRCLE_SIZE * currentCount + pulseSize,
+        ...GUIDE_CIRCLE_COLOR,
+        a: GUIDE_CIRCLE_OPACITY,
+      });
+    }
+  );
 
   // 카메라 이동 시작
   const onPointerDown = (e: PointerEvent) => {
@@ -29,22 +46,27 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
   // 카메라 이동
   const onPointerMove = (e: PointerEvent) => {
+    currentMouse.x = e.clientX;
+    currentMouse.y = e.clientY;
+
     if (isDragging) {
       cameraStore.pan(e.movementX, e.movementY);
       return;
     }
 
-    const { camera } = cameraStore.state;
-    const worldPos = screenToWorld(e.clientX, e.clientY, camera);
-
     // 가이드 원 생성 (좌클릭)
-    guideCircleStore.createGuideCircle({
-      x: worldPos.x,
-      y: worldPos.y,
-      size: CIRCLE_SIZE * increaseGuideCircle.currentCount,
-      ...CIRCLE_COLOR,
-      a: 0.7,
-    });
+    if (!increaseGuideCircle.isCharging) {
+      const { camera } = cameraStore.state;
+      const worldPos = screenToWorld(currentMouse.x, currentMouse.y, camera);
+
+      guideCircleStore.createGuideCircle({
+        x: worldPos.x,
+        y: worldPos.y,
+        size: CIRCLE_SIZE * increaseGuideCircle.currentCount,
+        ...GUIDE_CIRCLE_COLOR,
+        a: GUIDE_CIRCLE_OPACITY,
+      });
+    }
   };
 
   // 카메라 이동 종료
@@ -60,7 +82,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       const currentCount = increaseGuideCircle.stop();
 
       const { camera } = cameraStore.state;
-      const worldPos = screenToWorld(e.clientX, e.clientY, camera);
+      const worldPos = screenToWorld(currentMouse.x, currentMouse.y, camera);
 
       circleStore.addCircle({
         x: worldPos.x,
