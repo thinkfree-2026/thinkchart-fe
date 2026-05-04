@@ -41,8 +41,6 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     isDragging = false;
     canvas.style.cursor = 'default';
 
-    console.log(e.button, e.ctrlKey);
-
     // 원 생성 (좌클릭)
     if (e.button === 0 && !e.ctrlKey) {
       const { camera } = cameraStore.state;
