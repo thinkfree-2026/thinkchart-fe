@@ -152,6 +152,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
   // 이벤트 리스너 제거
   cleanupTasks.push(() => {
+    increaseGuideCircle.cancel();
     window.removeEventListener('keyup', onKeyUp);
     window.removeEventListener('keydown', onKeyDown);
     canvas.removeEventListener('pointerdown', onPointerDown);
