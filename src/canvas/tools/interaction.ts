@@ -1,11 +1,47 @@
 import { screenToWorld } from '../core/index.ts';
 import { cameraStore, circleStore, guideCircleStore } from '../store/index.ts';
 
-const CREATE_SIZE = 100;
-const CREATE_COLOR = { r: 99 / 255, g: 102 / 255, b: 241 / 255 };
+const CIRCLE_SIZE = 100;
+const CIRCLE_COLOR = { r: 99 / 255, g: 102 / 255, b: 241 / 255 };
+
+const increaseCounter = (callbackFn: (currentCount: number) => void) => {
+  let count = 1;
+  let intervalId: number | null = null;
+
+  return {
+    get currentCount() {
+      return count;
+    },
+    start() {
+      if (intervalId !== null) return;
+      intervalId = window.setInterval(() => {
+        count += 0.5;
+        callbackFn(count);
+      }, 1000);
+    },
+    stop() {
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+        intervalId = null;
+      }
+      const currentCount = count;
+      count = 1; // 카운트 초기화
+      return currentCount;
+    },
+    cancel() {
+      if (intervalId !== null) window.clearInterval(intervalId);
+      intervalId = null;
+      count = 1;
+    },
+  };
+};
 
 export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<() => void>) => {
   let isDragging = false;
+
+  const increaseGuideCircle = increaseCounter(currentCount => {
+    guideCircleStore.updateSize(CIRCLE_SIZE * currentCount);
+  });
 
   // 카메라 이동 시작
   const onPointerDown = (e: PointerEvent) => {
@@ -13,6 +49,11 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     if (e.button === 1 || (e.button === 0 && e.ctrlKey)) {
       isDragging = true;
       canvas.style.cursor = 'grabbing';
+      return;
+    }
+
+    if (e.button === 0) {
+      increaseGuideCircle.start();
     }
   };
 
@@ -30,30 +71,45 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     guideCircleStore.createGuideCircle({
       x: worldPos.x,
       y: worldPos.y,
-      size: CREATE_SIZE,
-      ...CREATE_COLOR,
+      size: CIRCLE_SIZE * increaseGuideCircle.currentCount,
+      ...CIRCLE_COLOR,
       a: 0.7,
     });
   };
 
   // 카메라 이동 종료
   const onPointerUp = (e: PointerEvent) => {
-    isDragging = false;
-    canvas.style.cursor = 'default';
+    if (isDragging) {
+      isDragging = false;
+      canvas.style.cursor = 'default';
+      return;
+    }
 
     // 원 생성 (좌클릭)
     if (e.button === 0 && !e.ctrlKey) {
+      const currentCount = increaseGuideCircle.stop();
+
       const { camera } = cameraStore.state;
       const worldPos = screenToWorld(e.clientX, e.clientY, camera);
 
       circleStore.addCircle({
         x: worldPos.x,
         y: worldPos.y,
-        size: CREATE_SIZE,
-        ...CREATE_COLOR,
+        size: CIRCLE_SIZE * currentCount,
+        ...CIRCLE_COLOR,
         a: 1.0,
       });
+
+      guideCircleStore.updateSize(CIRCLE_SIZE);
+    } else {
+      increaseGuideCircle.cancel();
     }
+  };
+
+  // 캔버스 벗어남
+  const onPointerLeave = () => {
+    guideCircleStore.updateVisibility(false);
+    increaseGuideCircle.cancel();
   };
 
   // 카메라 줌 인/아웃
@@ -75,24 +131,19 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     }
   };
 
-  // 캔버스 벗어남
-  const onPointerLeave = () => {
-    guideCircleStore.updateVisibility(false);
-  };
-
   // 이벤트 리스너 연결
   canvas.addEventListener('pointerdown', onPointerDown);
   canvas.addEventListener('pointermove', onPointerMove);
   window.addEventListener('pointerup', onPointerUp);
-  canvas.addEventListener('wheel', onWheel, { passive: false });
   canvas.addEventListener('pointerleave', onPointerLeave);
+  canvas.addEventListener('wheel', onWheel, { passive: false });
 
   // 이벤트 리스너 제거
   cleanupTasks.push(() => {
     canvas.removeEventListener('pointerdown', onPointerDown);
     canvas.removeEventListener('pointermove', onPointerMove);
     window.removeEventListener('pointerup', onPointerUp);
-    canvas.removeEventListener('wheel', onWheel);
     canvas.removeEventListener('pointerleave', onPointerLeave);
+    canvas.removeEventListener('wheel', onWheel);
   });
 };
