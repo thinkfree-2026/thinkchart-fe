@@ -32,6 +32,9 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
   // 카메라 이동 시작
   const onPointerDown = (e: PointerEvent) => {
+    currentMouse.x = e.clientX;
+    currentMouse.y = e.clientY;
+
     // 카메라 이동 (마우스 휠 클릭 또는 Ctrl+좌클릭)
     if (e.button === 1 || (e.button === 0 && e.ctrlKey)) {
       isDragging = true;
