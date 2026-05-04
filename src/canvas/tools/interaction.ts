@@ -94,7 +94,9 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     }
 
     // 원 생성 (좌클릭)
-    if (e.button === 0 && !e.ctrlKey) {
+    if (e.button === 0) {
+      if (!increaseGuideCircle.isCharging) return;
+
       const currentCount = increaseGuideCircle.stop();
 
       const { camera } = cameraStore.state;

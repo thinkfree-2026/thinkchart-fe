@@ -97,9 +97,15 @@ export const initWebGL = (canvas: HTMLCanvasElement): { gl: WebGLRenderingContex
     throw new Error('WebGL 프로그램 링킹 실패');
   }
 
-  // 투명도 혼합 활성화
+  // r, g, b, a 혼합 활성화
   gl.enable(gl.BLEND);
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  // gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.blendFuncSeparate(
+    gl.SRC_ALPHA,
+    gl.ONE_MINUS_SRC_ALPHA, // 색상(r, g, b) 혼합 - 셀로판 효과
+    gl.ONE,
+    gl.ONE_MINUS_SRC_ALPHA // 투명도(a) 혼합 - 캔버스 불투명도 유지
+  );
 
   return { gl, program };
 };
