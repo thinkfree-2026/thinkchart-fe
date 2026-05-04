@@ -9,6 +9,7 @@ const GUIDE_CIRCLE_COLOR = { r: 0, g: 0, b: 0 };
 const GUIDE_CIRCLE_OPACITY = 0.05;
 
 export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<() => void>) => {
+  let isSpacePressed = false;
   let isDragging = false;
 
   const currentMouse = { x: 0, y: 0 };
@@ -30,13 +31,25 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     }
   );
 
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.code === 'Space') {
+      isSpacePressed = true;
+    }
+  };
+
+  const onKeyUp = (e: KeyboardEvent) => {
+    if (e.code === 'Space') {
+      isSpacePressed = false;
+    }
+  };
+
   // 카메라 이동 시작
   const onPointerDown = (e: PointerEvent) => {
     currentMouse.x = e.clientX;
     currentMouse.y = e.clientY;
 
-    // 카메라 이동 (마우스 휠 클릭 또는 Ctrl+좌클릭)
-    if (e.button === 1 || (e.button === 0 && e.ctrlKey)) {
+    // 카메라 이동 (마우스 휠 클릭 또는 Space+좌클릭)
+    if (e.button === 1 || (e.button === 0 && isSpacePressed)) {
       isDragging = true;
       canvas.style.cursor = 'grabbing';
       return;
@@ -111,7 +124,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   const onWheel = (e: WheelEvent) => {
     e.preventDefault();
 
-    if (e.ctrlKey) {
+    if (isSpacePressed) {
       const zoomIntensity = 0.002;
       const zoomFactor = Math.exp(e.deltaY * -zoomIntensity);
 
@@ -127,6 +140,8 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   };
 
   // 이벤트 리스너 연결
+  window.addEventListener('keyup', onKeyUp);
+  window.addEventListener('keydown', onKeyDown);
   canvas.addEventListener('pointerdown', onPointerDown);
   canvas.addEventListener('pointermove', onPointerMove);
   window.addEventListener('pointerup', onPointerUp);
@@ -135,6 +150,8 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
   // 이벤트 리스너 제거
   cleanupTasks.push(() => {
+    window.removeEventListener('keyup', onKeyUp);
+    window.removeEventListener('keydown', onKeyDown);
     canvas.removeEventListener('pointerdown', onPointerDown);
     canvas.removeEventListener('pointermove', onPointerMove);
     window.removeEventListener('pointerup', onPointerUp);
