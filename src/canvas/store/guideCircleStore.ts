@@ -12,36 +12,41 @@ const createGuideCircleStore = () => {
   return {
     state,
     subscribe,
-    createGuideCircle: (circle: Circle) => {
+    set: (circle: Circle) => {
       state.guideCircle = {
+        ...state.guideCircle,
         circle,
+      };
+    },
+    show: () => {
+      if (state.guideCircle.isVisible) return;
+      state.guideCircle = {
+        ...state.guideCircle,
         isVisible: true,
       };
     },
-    pan: (dx: number, dy: number) => {
-      if (!state.guideCircle.circle) return;
-
+    hide: () => {
+      if (!state.guideCircle.isVisible) return;
       state.guideCircle = {
-        circle: {
-          ...state.guideCircle.circle,
-          x: dx,
-          y: dy,
-        },
-        isVisible: true,
+        ...state.guideCircle,
+        isVisible: false,
       };
     },
-    updateVisibility: (isVisible: boolean) => {
-      state.guideCircle.isVisible = isVisible;
-    },
-    updateSize: (size: number) => {
-      if (!state.guideCircle.circle) return;
-
+    setVisible: (isVisible: boolean) => {
+      if (state.guideCircle.isVisible === isVisible) return;
       state.guideCircle = {
+        ...state.guideCircle,
+        isVisible,
+      };
+    },
+    setSize: (size: number) => {
+      if (!state.guideCircle.circle) return;
+      state.guideCircle = {
+        ...state.guideCircle,
         circle: {
           ...state.guideCircle.circle,
           size,
         },
-        isVisible: true,
       };
     },
   };

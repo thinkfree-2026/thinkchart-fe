@@ -1,12 +1,30 @@
 import { screenToWorld } from '../core/index.ts';
-import { cameraStore, circleStore, guideCircleStore } from '../store/index.ts';
+import { cameraStore, circleStore, guideCircleStore, selectionStore } from '../store/index.ts';
 
 import { increaseCounter } from './increaseCounter.ts';
 
 const CIRCLE_SIZE = 100;
-const CIRCLE_COLOR = { r: 99 / 255, g: 102 / 255, b: 241 / 255 };
+const CIRCLE_COLOR = { r: 199 / 255, g: 210 / 255, b: 254 / 255 };
 const GUIDE_CIRCLE_COLOR = { r: 0, g: 0, b: 0 };
 const GUIDE_CIRCLE_OPACITY = 0.05;
+
+// 커서에 있는 원 인덱스 탐색
+const getHoveredCircleIndex = (worldX: number, worldY: number) => {
+  const circles = circleStore.getCircles();
+
+  // 나중에 그려진 원부터 검사
+  for (let i = circles.length - 1; i >= 0; i--) {
+    const circle = circles[i];
+    const dx = worldX - circle.x;
+    const dy = worldY - circle.y;
+    // 반지름의 제곱, 거리의 제곱 비교
+    if (dx * dx + dy * dy <= (circle.size / 2) * (circle.size / 2)) {
+      return i;
+    }
+  }
+
+  return -1;
+};
 
 export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<() => void>) => {
   let isSpacePressed = false;
@@ -15,13 +33,13 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   const currentMouse = { x: 0, y: 0 };
   const increaseGuideCircle = increaseCounter(
     currentCount => {
-      guideCircleStore.updateSize(CIRCLE_SIZE * currentCount);
+      guideCircleStore.setSize(CIRCLE_SIZE * currentCount);
     },
     (pulseSize, currentCount) => {
       const { camera } = cameraStore.state;
       const worldPos = screenToWorld(currentMouse.x, currentMouse.y, camera);
 
-      guideCircleStore.createGuideCircle({
+      guideCircleStore.set({
         x: worldPos.x,
         y: worldPos.y,
         size: CIRCLE_SIZE * currentCount + pulseSize,
@@ -30,6 +48,37 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       });
     }
   );
+
+  // 마우스, 카메라, 데이터가 변할 때마다 호출할 단일 상태 갱신 함수
+  const updateGuideCircleState = () => {
+    const { camera } = cameraStore.state;
+    const worldPos = screenToWorld(currentMouse.x, currentMouse.y, camera);
+    const hoveredIndex = getHoveredCircleIndex(worldPos.x, worldPos.y);
+
+    // 호버 상태 갱신
+    selectionStore.setHover(hoveredIndex);
+
+    // 가이드 원의 isVisible 제어
+    const isOverCircle = hoveredIndex !== -1;
+    const shouldShowGuide = !isDragging && !isOverCircle;
+
+    if (shouldShowGuide) {
+      // 가이드 원 표시
+      if (!increaseGuideCircle.isCharging) {
+        guideCircleStore.set({
+          x: worldPos.x,
+          y: worldPos.y,
+          size: CIRCLE_SIZE * increaseGuideCircle.currentCount,
+          ...GUIDE_CIRCLE_COLOR,
+          a: GUIDE_CIRCLE_OPACITY,
+        });
+      }
+      guideCircleStore.show();
+    } else {
+      // 가이드 원 숨김
+      guideCircleStore.hide();
+    }
+  };
 
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.code === 'Space') {
@@ -52,11 +101,22 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     if (e.button === 1 || (e.button === 0 && isSpacePressed)) {
       isDragging = true;
       canvas.style.cursor = 'grabbing';
+      updateGuideCircleState();
       return;
     }
 
     if (e.button === 0) {
-      increaseGuideCircle.start();
+      const { camera } = cameraStore.state;
+      const worldPos = screenToWorld(e.clientX, e.clientY, camera);
+      const hoveredIndex = getHoveredCircleIndex(worldPos.x, worldPos.y);
+
+      // 클릭한 원을 선택 상태로 설정 (빈 공간 클릭 시 -1로 해제)
+      selectionStore.setSelect(hoveredIndex);
+
+      // 빈 공간을 클릭했을 때만 가이드 원 애니메이션 동작
+      if (hoveredIndex === -1) {
+        increaseGuideCircle.start();
+      }
     }
   };
 
@@ -67,22 +127,9 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
     if (isDragging) {
       cameraStore.pan(e.movementX, e.movementY);
-      return;
     }
 
-    // 가이드 원 생성 (좌클릭)
-    if (!increaseGuideCircle.isCharging) {
-      const { camera } = cameraStore.state;
-      const worldPos = screenToWorld(currentMouse.x, currentMouse.y, camera);
-
-      guideCircleStore.createGuideCircle({
-        x: worldPos.x,
-        y: worldPos.y,
-        size: CIRCLE_SIZE * increaseGuideCircle.currentCount,
-        ...GUIDE_CIRCLE_COLOR,
-        a: GUIDE_CIRCLE_OPACITY,
-      });
-    }
+    updateGuideCircleState();
   };
 
   // 카메라 이동 종료
@@ -90,6 +137,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     if (isDragging) {
       isDragging = false;
       canvas.style.cursor = 'default';
+      updateGuideCircleState();
       return;
     }
 
@@ -110,7 +158,9 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
         a: 1.0,
       });
 
-      guideCircleStore.updateSize(CIRCLE_SIZE);
+      guideCircleStore.setSize(CIRCLE_SIZE);
+
+      updateGuideCircleState();
     } else {
       increaseGuideCircle.cancel();
     }
@@ -118,13 +168,17 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
   // 캔버스 벗어남
   const onPointerLeave = () => {
-    guideCircleStore.updateVisibility(false);
+    guideCircleStore.hide();
+    selectionStore.setHover(-1); // 나갔을 때 호버도 해제
     increaseGuideCircle.cancel();
   };
 
   // 카메라 줌 인/아웃
   const onWheel = (e: WheelEvent) => {
     e.preventDefault();
+
+    currentMouse.x = e.clientX;
+    currentMouse.y = e.clientY;
 
     if (isSpacePressed) {
       const zoomIntensity = 0.002;
@@ -133,12 +187,9 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       cameraStore.zoom(zoomFactor, e.clientX, e.clientY);
     } else {
       cameraStore.pan(-e.deltaX, -e.deltaY);
-
-      const { camera } = cameraStore.state;
-      const worldPos = screenToWorld(e.clientX, e.clientY, camera);
-
-      guideCircleStore.pan(worldPos.x, worldPos.y);
     }
+
+    updateGuideCircleState();
   };
 
   // 이벤트 리스너 연결
