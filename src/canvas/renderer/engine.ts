@@ -1,5 +1,5 @@
 import { Matrix3 } from '../core/index.ts';
-import { cameraStore, circleStore, guideCircleStore, MAX_CIRCLES } from '../store/index.ts';
+import { cameraStore, circleStore, guideCircleStore, MAX_CIRCLES, selectionStore } from '../store/index.ts';
 import { initWebGL, setupInstancedBuffers } from '../webgl/index.ts';
 
 export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() => void>) => {
@@ -66,6 +66,36 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
       ext.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, count);
     }
 
+    const circles = circleStore.getCircles();
+    const { hoveredIndex, selectedIndex } = selectionStore.state.selection;
+
+    console.log(selectedIndex);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
+
+    // 원 위 Hover 시 테두리 하이라이트 표시
+    if (hoveredIndex !== -1 && hoveredIndex < circles.length) {
+      const circle = circles[hoveredIndex];
+
+      // 테두리용 큰 원
+      const hoverData = new Float32Array([
+        circle.x,
+        circle.y,
+        circle.size + 2.5, // 테두리 두께
+        129 / 255,
+        140 / 255,
+        248 / 255,
+        1.0,
+      ]);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, hoverData);
+      ext.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, 1);
+
+      // 원래 원을 다시 그려 테두리 효과 적용
+      const originalData = new Float32Array([circle.x, circle.y, circle.size, circle.r, circle.g, circle.b, circle.a]);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, originalData);
+      ext.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, 1);
+    }
+
     // 가이드 원 드로우
     const { guideCircle } = guideCircleStore.state;
     if (guideCircle.circle && guideCircle.isVisible) {
@@ -118,12 +148,12 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
 
   // 카메라 이동 감지
   const unsubscribeCamera = cameraStore.subscribe('camera', requestRender);
-
   // 원 생성 감지
   const unsubscribeCircle = circleStore.subscribe('version', updateCircleBuffers);
-
-  // 가이드 원 이동 (마우스 이동) 감지
+  // 가이드 원 이동 감지
   const unsubscribeGuide = guideCircleStore.subscribe('guideCircle', requestRender);
+  // 선택 상태(호버, 클릭) 감지
+  const unsubscribeSelection = selectionStore.subscribe('selection', requestRender);
 
   // 캔버스 크기 변경 감지
   const resizeObserver = new ResizeObserver(entries => {
@@ -138,6 +168,7 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     unsubscribeCamera();
     unsubscribeCircle();
     unsubscribeGuide();
+    unsubscribeSelection();
   });
 
   // 렌더링 시 최초 1회 실행

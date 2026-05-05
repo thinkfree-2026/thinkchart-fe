@@ -1,12 +1,8 @@
+import { CIRCLE_COLOR, CIRCLE_SIZE, GUIDE_CIRCLE_COLOR, GUIDE_CIRCLE_OPACITY } from '../constants/index.ts';
 import { screenToWorld } from '../core/index.ts';
 import { cameraStore, circleStore, guideCircleStore, selectionStore } from '../store/index.ts';
 
 import { increaseCounter } from './increaseCounter.ts';
-
-const CIRCLE_SIZE = 100;
-const CIRCLE_COLOR = { r: 199 / 255, g: 210 / 255, b: 254 / 255 };
-const GUIDE_CIRCLE_COLOR = { r: 0, g: 0, b: 0 };
-const GUIDE_CIRCLE_OPACITY = 0.05;
 
 // 커서에 있는 원 인덱스 탐색
 const getHoveredCircleIndex = (worldX: number, worldY: number) => {
