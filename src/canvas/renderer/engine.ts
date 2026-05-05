@@ -69,11 +69,9 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     const circles = circleStore.getCircles();
     const { hoveredIndex, selectedIndex } = selectionStore.state.selection;
 
-    console.log(selectedIndex);
-
     gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer);
 
-    // 원 위 Hover 시 테두리 하이라이트 표시
+    // 원 Hover 시 테두리 하이라이트 표시
     if (hoveredIndex !== -1 && hoveredIndex < circles.length) {
       const circle = circles[hoveredIndex];
 
@@ -92,6 +90,29 @@ export const createEngine = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
 
       // 원래 원을 다시 그려 테두리 효과 적용
       const originalData = new Float32Array([circle.x, circle.y, circle.size, circle.r, circle.g, circle.b, circle.a]);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, originalData);
+      ext.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, 1);
+    }
+
+    // 원 클릭 시 테두리 하이라이트 표시
+    if (selectedIndex !== -1 && selectedIndex < circles.length) {
+      const c = circles[selectedIndex];
+
+      // 테두리용 큰 원
+      const selectData = new Float32Array([
+        c.x,
+        c.y,
+        c.size + 20, // 테두리 두께
+        129 / 255,
+        140 / 255,
+        248 / 255,
+        1.0,
+      ]);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, selectData);
+      ext.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, 1);
+
+      // 원래 원을 다시 그려 테두리 효과 완성
+      const originalData = new Float32Array([c.x, c.y, c.size, c.r, c.g, c.b, c.a]);
       gl.bufferSubData(gl.ARRAY_BUFFER, 0, originalData);
       ext.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, 1);
     }
