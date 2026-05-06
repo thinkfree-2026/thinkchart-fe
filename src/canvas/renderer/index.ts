@@ -1,1 +1,1 @@
-export * from './engine.ts';
+export * from './renderCanvas.ts';
