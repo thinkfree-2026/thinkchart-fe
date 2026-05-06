@@ -23,12 +23,10 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
 
   // 원 & 기본 테두리 생성 함수
   const drawCircle = (circle: Circle, isHovered: boolean, isSelected: boolean, isGuide: boolean = false) => {
-    const radius = circle.size / 2;
-
     ctx.beginPath();
-    ctx.arc(circle.x, circle.y, radius, 0, Math.PI * 2);
+    ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
 
-    ctx.fillStyle = `rgba(${circle.r}, ${circle.g}, ${circle.b}, ${circle.a})`;
+    ctx.fillStyle = circle.color;
     ctx.fill();
 
     // 상호작용 중이지 않은 원에만 기본 테두리 생성
@@ -48,20 +46,20 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     showCircleBorder: boolean,
     circleThickness: number
   ) => {
-    const radius = circle.size / 2;
+    const size = circle.radius * 2;
 
     // 사각형 박스 테두리 생성
     if (showSquare) {
       // 모니터 픽셀 기준으로 일정한 두께 유지
       ctx.lineWidth = squareThickness / cameraScale;
       ctx.strokeStyle = CIRCLE_COLOR_HIGHLIGHT;
-      ctx.strokeRect(circle.x - radius, circle.y - radius, circle.size, circle.size);
+      ctx.strokeRect(circle.x - circle.radius, circle.y - circle.radius, size, size);
     }
 
     // 하이라이트 테두리 생성
     if (showCircleBorder) {
       ctx.beginPath();
-      ctx.arc(circle.x, circle.y, radius, 0, Math.PI * 2);
+      ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
       ctx.lineWidth = circleThickness / cameraScale;
       ctx.strokeStyle = CIRCLE_COLOR_HIGHLIGHT;
       ctx.stroke();

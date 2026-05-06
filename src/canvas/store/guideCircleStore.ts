@@ -39,13 +39,13 @@ const createGuideCircleStore = () => {
         isVisible,
       };
     },
-    setSize: (size: number) => {
+    setRadius: (radius: number) => {
       if (!state.guideCircle.circle) return;
       state.guideCircle = {
         ...state.guideCircle,
         circle: {
           ...state.guideCircle.circle,
-          size,
+          radius,
         },
       };
     },

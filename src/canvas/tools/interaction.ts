@@ -1,4 +1,4 @@
-import { CIRCLE_COLOR, CIRCLE_SIZE, GUIDE_CIRCLE_COLOR, GUIDE_CIRCLE_OPACITY } from '../constants/index.ts';
+import { CIRCLE_COLOR, CIRCLE_RADIUS, GUIDE_CIRCLE_COLOR } from '../constants/index.ts';
 import { screenToWorld } from '../core/index.ts';
 import { cameraStore, circleStore, guideCircleStore, selectionStore } from '../store/index.ts';
 
@@ -11,12 +11,10 @@ const getHoveredCircleIndex = (worldX: number, worldY: number) => {
   // 가장 위에 그려진(배열의 마지막) 원부터 역순으로 검사
   for (let index = circles.length - 1; index >= 0; index--) {
     const circle = circles[index];
-    const deltaX = worldX - circle.x;
-    const deltaY = worldY - circle.y;
-    const radius = circle.size / 2;
+    const mouseX = Math.abs(worldX - circle.x);
+    const mouseY = Math.abs(worldY - circle.y);
 
-    // 기존의 사각형 바운딩 박스 검사 로직을 피타고라스 정리를 이용한 정확한 원형 충돌 검사로 개선
-    if (deltaX * deltaX + deltaY * deltaY <= radius * radius) {
+    if (mouseX <= circle.radius && mouseY <= circle.radius) {
       return index;
     }
   }
@@ -31,7 +29,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   const currentMousePosition = { x: 0, y: 0 };
   const increaseGuideCircle = increaseCounter(
     currentCount => {
-      guideCircleStore.setSize(CIRCLE_SIZE * currentCount);
+      guideCircleStore.setRadius(CIRCLE_RADIUS * currentCount);
     },
     (pulseSize, currentCount) => {
       const { camera } = cameraStore.state;
@@ -40,9 +38,8 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       guideCircleStore.set({
         x: worldPosition.x,
         y: worldPosition.y,
-        size: CIRCLE_SIZE * currentCount + pulseSize,
-        ...GUIDE_CIRCLE_COLOR,
-        a: GUIDE_CIRCLE_OPACITY,
+        radius: CIRCLE_RADIUS * currentCount + pulseSize,
+        color: GUIDE_CIRCLE_COLOR,
       });
     }
   );
@@ -66,9 +63,8 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
         guideCircleStore.set({
           x: worldPosition.x,
           y: worldPosition.y,
-          size: CIRCLE_SIZE * increaseGuideCircle.currentCount,
-          ...GUIDE_CIRCLE_COLOR,
-          a: GUIDE_CIRCLE_OPACITY,
+          radius: CIRCLE_RADIUS * increaseGuideCircle.currentCount,
+          color: GUIDE_CIRCLE_COLOR,
         });
       }
       guideCircleStore.show();
@@ -153,16 +149,15 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       circleStore.addCircle({
         x: worldPosition.x,
         y: worldPosition.y,
-        size: CIRCLE_SIZE * currentCount,
-        ...CIRCLE_COLOR,
-        a: 1.0,
+        radius: CIRCLE_RADIUS * currentCount,
+        color: CIRCLE_COLOR,
       });
 
       // 새롭게 생성한 원을 즉시 선택 상태로 설정
       const newCircleIndex = circleStore.getCircles().length - 1;
       selectionStore.setSelect(newCircleIndex);
 
-      guideCircleStore.setSize(CIRCLE_SIZE);
+      guideCircleStore.setRadius(CIRCLE_RADIUS);
 
       updateGuideCircleState();
     } else {
