@@ -66,7 +66,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   const onKeyUp = (event: KeyboardEvent) => {
     if (event.code === 'Space') {
       isSpacePressed = false;
-      canvas.style.cursor = 'grabbing';
+      canvas.style.cursor = 'default';
     }
   };
 
