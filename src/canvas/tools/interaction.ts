@@ -13,8 +13,8 @@ const getHoveredCircleIndex = (worldX: number, worldY: number) => {
     const circle = circles[i];
     const dx = worldX - circle.x;
     const dy = worldY - circle.y;
-    // 반지름의 제곱, 거리의 제곱 비교
-    if (dx * dx + dy * dy <= (circle.size / 2) * (circle.size / 2)) {
+
+    if (Math.abs(dx) <= circle.size / 2 && Math.abs(dy) <= circle.size / 2) {
       return i;
     }
   }
@@ -79,12 +79,14 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.code === 'Space') {
       isSpacePressed = true;
+      canvas.style.cursor = 'grabbing';
     }
   };
 
   const onKeyUp = (e: KeyboardEvent) => {
     if (e.code === 'Space') {
       isSpacePressed = false;
+      canvas.style.cursor = 'grabbing';
     }
   };
 
@@ -96,7 +98,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     // 카메라 이동 (마우스 휠 클릭 또는 Space+좌클릭)
     if (e.button === 1 || (e.button === 0 && isSpacePressed)) {
       isDragging = true;
-      canvas.style.cursor = 'grabbing';
+      canvas.style.cursor = 'default';
       updateGuideCircleState();
       return;
     }
@@ -154,6 +156,10 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
         a: 1.0,
       });
 
+      // 생성한 원을 선택 상태로 설정
+      const newCircleIndex = circleStore.getCircles().length - 1;
+      selectionStore.setSelect(newCircleIndex);
+
       guideCircleStore.setSize(CIRCLE_SIZE);
 
       updateGuideCircleState();
@@ -176,7 +182,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     currentMouse.x = e.clientX;
     currentMouse.y = e.clientY;
 
-    if (isSpacePressed) {
+    if (e.ctrlKey) {
       const zoomIntensity = 0.002;
       const zoomFactor = Math.exp(e.deltaY * -zoomIntensity);
 
