@@ -25,6 +25,7 @@ export const ChartItem = ({ id, label, isActive, onSelect, onDelete }: ChartItem
       <button
         class="text-gray-400 opacity-0 transition group-hover:opacity-100 hover:text-red-500"
         onclick={handleDeleteClick}
+        aria-label="Delete Chart"
       >
         ✕
       </button>
