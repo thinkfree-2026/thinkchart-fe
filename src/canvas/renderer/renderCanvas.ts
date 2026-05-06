@@ -1,19 +1,19 @@
-import { CIRCLE_COLOR_HIGHLIGHT } from '../constants/index.ts';
 import { cameraStore, circleStore, guideCircleStore, selectionStore } from '../store/index.ts';
-import type { Circle } from '../types/index.ts';
 
-const BASE_BORDER_COLOR = '#818CF8';
+import { drawCircle } from './circleRenderer.ts';
+import { drawHighlight } from './highlightRenderer.ts';
 
+// 캔버스 렌더링 파이프라인 통제 및 하위 렌더러 조율
 export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() => void>) => {
   const ctx = canvas.getContext('2d');
 
   if (!ctx) {
-    throw new Error('Canvas 2D 컨텍스트를 생성할 수 없습니다.');
+    throw new Error('Canvas 2D 컨텍스트 생성 불가');
   }
 
   let isRenderPending = false;
 
-  // 브라우저 프레임 주기에 맞춘 렌더링 처리
+  // 브라우저 렌더링 주기에 맞춰 드로우 콜을 묶어서 처리하는 디바운싱 로직
   const requestRender = () => {
     if (!isRenderPending) {
       isRenderPending = true;
@@ -21,100 +21,55 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     }
   };
 
-  // 원 & 기본 테두리 생성 함수
-  const drawCircle = (circle: Circle, isHovered: boolean, isSelected: boolean, isGuide: boolean = false) => {
-    ctx.beginPath();
-    ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
-
-    ctx.fillStyle = circle.color;
-    ctx.fill();
-
-    // 상호작용 중이지 않은 원에만 기본 테두리 생성
-    if (!isHovered && !isSelected && !isGuide) {
-      ctx.lineWidth = 0.75;
-      ctx.strokeStyle = BASE_BORDER_COLOR;
-      ctx.stroke();
-    }
-  };
-
-  // 상호작용 상태에 따른 하이라이트 UI 생성 함수
-  const drawHighlight = (
-    cameraScale: number,
-    circle: Circle,
-    showSquare: boolean,
-    squareThickness: number,
-    showCircleBorder: boolean,
-    circleThickness: number
-  ) => {
-    const size = circle.radius * 2;
-
-    // 사각형 박스 테두리 생성
-    if (showSquare) {
-      // 모니터 픽셀 기준으로 일정한 두께 유지
-      ctx.lineWidth = squareThickness / cameraScale;
-      ctx.strokeStyle = CIRCLE_COLOR_HIGHLIGHT;
-      ctx.strokeRect(circle.x - circle.radius, circle.y - circle.radius, size, size);
-    }
-
-    // 하이라이트 테두리 생성
-    if (showCircleBorder) {
-      ctx.beginPath();
-      ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
-      ctx.lineWidth = circleThickness / cameraScale;
-      ctx.strokeStyle = CIRCLE_COLOR_HIGHLIGHT;
-      ctx.stroke();
-    }
-  };
-
-  // 메인 렌더링 함수
+  // 실제 화면을 비우고 하위 렌더러들에게 그리기 명령을 전달하는 메인 렌더링 함수
   const render = () => {
     isRenderPending = false;
 
     const devicePixelRatio = window.devicePixelRatio || 1;
     const { camera } = cameraStore.state;
 
-    // 이전 프레임 잔상 제거
+    // 이전 프레임의 잔상을 화면에서 완전히 제거
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 고해상도 대응을 위한 픽셀 스케일링
+    // 고해상도 디스플레이 대응을 위해 픽셀 밀도를 캔버스 스케일에 적용
     ctx.scale(devicePixelRatio, devicePixelRatio);
 
-    // 카메라 이동 및 줌 인/아웃 상태 캔버스 적용
+    // 카메라의 이동 좌표 및 줌 배율을 캔버스 전체 영역에 반영
     ctx.translate(camera.x, camera.y);
     ctx.scale(camera.scale, camera.scale);
 
     const circles = circleStore.getCircles();
     const { hoveredIndex, selectedIndex } = selectionStore.state.selection;
 
-    // 원 렌더링
+    // 스토어에 저장된 실제 원 데이터를 순회하며 렌더링 진행
     for (let index = 0; index < circles.length; index++) {
       const circle = circles[index];
       const isHovered = index === hoveredIndex;
       const isSelected = index === selectedIndex;
 
-      drawCircle(circle, isHovered, isSelected);
+      drawCircle(ctx, circle, isHovered, isSelected);
     }
 
-    // 가이드 원 렌더링
+    // 마우스를 따라다니는 가이드 원이 활성화된 상태일 경우 화면에 렌더링
     const { guideCircle } = guideCircleStore.state;
     if (guideCircle.isVisible && guideCircle.circle) {
-      drawCircle(guideCircle.circle, false, false, true);
+      drawCircle(ctx, guideCircle.circle, false, false, true);
     }
 
-    // 하이라이트 UI 렌더링
     const BASE_THICKNESS = 0.75;
 
-    // 호버 - 선택되지 않은 원에 마우스 호버
+    // 호버 상태 처리
     if (hoveredIndex !== -1 && hoveredIndex !== selectedIndex && hoveredIndex < circles.length) {
-      drawHighlight(camera.scale, circles[hoveredIndex], false, 0.0, true, BASE_THICKNESS * 2);
+      drawHighlight(ctx, camera.scale, circles[hoveredIndex], false, 0.0, true, BASE_THICKNESS * 2);
     }
 
-    // 선택 - 원이 선택되었으며, 마우스 호버 여부에 따라 테두리 두께 조절
+    // 선택 상태 처리
     if (selectedIndex !== -1 && selectedIndex < circles.length) {
       const isHoveringSelected = hoveredIndex === selectedIndex;
 
       drawHighlight(
+        ctx,
         camera.scale,
         circles[selectedIndex],
         true,
@@ -125,7 +80,7 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     }
   };
 
-  // 브라우저 창 크기 변화 대응 -> 캔버스 픽셀 해상도 다시 생성
+  // 브라우저 창 크기가 변할 때 캔버스 해상도 재설정
   const handleResize = (cssWidth: number, cssHeight: number) => {
     const devicePixelRatio = window.devicePixelRatio || 1;
     canvas.width = cssWidth * devicePixelRatio;
@@ -133,13 +88,13 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     requestRender();
   };
 
-  // 스토어 상태 변경 감지 이벤트 구독 연결
+  // 데이터 스토어의 상태 변경 이벤트를 구독하여 화면 갱신 요청
   const unsubscribeCamera = cameraStore.subscribe('camera', requestRender);
   const unsubscribeCircle = circleStore.subscribe('version', requestRender);
   const unsubscribeGuideCircle = guideCircleStore.subscribe('guideCircle', requestRender);
   const unsubscribeSelection = selectionStore.subscribe('selection', requestRender);
 
-  // 캔버스 크기 변화 옵저버 등록
+  // 캔버스 HTML 요소의 크기 변화를 감지하는 옵저버 등록
   const resizeObserver = new ResizeObserver(entries => {
     const { width, height } = entries[0].contentRect;
     handleResize(width, height);
@@ -147,7 +102,7 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
 
   resizeObserver.observe(canvas);
 
-  // 컴포넌트 해제 시 메모리 누수를 막기 위한 클린업 작업 등록
+  // 컴포넌트 마운트 해제 시 메모리 누수를 막기 위한 이벤트 구독 및 옵저버 해제 작업을 배열에 추가
   cleanupTasks.push(() => {
     resizeObserver.disconnect();
     unsubscribeCamera();
@@ -156,7 +111,7 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     unsubscribeSelection();
   });
 
-  // 초기화 직후 최초 화면을 그리기 위한 리사이즈 이벤트 실행
+  // 컨트롤러 초기화 직후 화면을 꽉 채우기 위해 리사이즈 이벤트 강제 실행
   const initialWidth = canvas.clientWidth || window.innerWidth;
   const initialHeight = canvas.clientHeight || window.innerHeight;
   handleResize(initialWidth, initialHeight);
