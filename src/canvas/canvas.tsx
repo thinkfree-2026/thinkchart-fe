@@ -1,11 +1,11 @@
-import { render } from './renderer/index.ts';
+import { renderCanvas } from './renderer/index.ts';
 import { setupInteraction } from './tools/index.ts';
 
 export const Canvas = () => {
   const cleanupTasks: Array<() => void> = [];
 
   const initializeCallback = (canvasElement: HTMLCanvasElement) => {
-    render(canvasElement, cleanupTasks);
+    renderCanvas(canvasElement, cleanupTasks);
     setupInteraction(canvasElement, cleanupTasks); // 이벤트 매니저 연결
   };
 
