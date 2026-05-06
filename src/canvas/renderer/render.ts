@@ -4,7 +4,7 @@ import { drawCircle } from './circleRenderer.ts';
 import { drawHighlight } from './highlightRenderer.ts';
 
 // 캔버스 렌더링 파이프라인 통제 및 하위 렌더러 조율
-export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() => void>) => {
+export const render = (canvas: HTMLCanvasElement, cleanupTasks: Array<() => void>) => {
   const ctx = canvas.getContext('2d');
 
   if (!ctx) {
