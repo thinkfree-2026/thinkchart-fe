@@ -1,19 +1,33 @@
 type ChartItemProps = {
-  key: string;
+  id: string;
   label: string;
-  active?: boolean;
-  onClick?: () => void;
+  isActive: boolean;
+  onSelect: (id: string) => void;
+  onDelete: (id: string) => void;
 };
 
-export const ChartItem = ({ label, active, onClick }: ChartItemProps) => {
+export const ChartItem = ({ id, label, isActive, onSelect, onDelete }: ChartItemProps) => {
+  const handleClick = () => onSelect(id);
+
+  const handleDeleteClick = (e: MouseEvent) => {
+    e.stopPropagation();
+    onDelete(id);
+  };
+
   return (
-    <button
-      onclick={onClick}
-      class={`w-full rounded-xl px-3 py-2 text-left text-caption transition ${
-        active ? 'bg-primary/10 font-semibold text-primary' : 'text-gray-500 hover:bg-gray-100'
+    <div
+      onclick={handleClick}
+      class={`group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-caption transition ${
+        isActive ? 'bg-primary/10 font-semibold text-primary' : 'text-gray-500 hover:bg-gray-100'
       } `}
     >
-      {label}
-    </button>
+      <span>{label}</span>
+      <button
+        class="text-gray-400 opacity-0 transition group-hover:opacity-100 hover:text-red-500"
+        onclick={handleDeleteClick}
+      >
+        ✕
+      </button>
+    </div>
   );
 };

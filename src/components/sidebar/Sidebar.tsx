@@ -1,5 +1,6 @@
 import { ChartList } from './ChartList.tsx';
 import { createRef, createStore } from '../../utils/index.ts';
+import type { ChartListItem } from '../../types/index.ts';
 
 const charts = [
   { id: 'chart1', label: 'Chart1' },
@@ -10,8 +11,12 @@ const charts = [
 ];
 
 export const Sidebar = () => {
-  const { state, subscribe } = createStore<{ activeId: string | null }>({
+  const { state, subscribe } = createStore<{
+    activeId: string | null;
+    charts: ChartListItem[];
+  }>({
     activeId: null,
+    charts: charts,
   });
 
   const listRef = createRef<HTMLElement | null>(null);
@@ -20,15 +25,32 @@ export const Sidebar = () => {
     state.activeId = id;
   };
 
-  subscribe('activeId', () => {
-    if (!listRef.current) return;
+  const handleChartDelete = (id: string) => {
+    state.charts = state.charts.filter(chart => chart.id !== id);
 
-    listRef.current.replaceChildren(render());
-  });
-
-  const render = () => {
-    return <ChartList charts={charts} activeId={state.activeId} onSelect={handleChartSelect} />;
+    if (state.activeId === id) {
+      state.activeId = null;
+    }
   };
+
+  const renderList = () => {
+    return (
+      <ChartList
+        charts={state.charts}
+        activeId={state.activeId}
+        onSelect={handleChartSelect}
+        onDelete={handleChartDelete}
+      />
+    );
+  };
+
+  const rerender = () => {
+    if (!listRef.current) return;
+    listRef.current.replaceChildren(renderList());
+  };
+
+  subscribe('charts', rerender);
+  subscribe('activeId', rerender);
 
   return (
     <div class="fixed flex h-screen">
@@ -37,7 +59,7 @@ export const Sidebar = () => {
           <div class="font-bold text-primary">ThinkChart</div>
           <div class="mt-1 text-caption text-gray-300">Collaborative Space</div>
         </div>
-        <div ref={listRef}>{render()}</div>
+        <div ref={listRef}>{renderList()}</div>
       </div>
     </div>
   );

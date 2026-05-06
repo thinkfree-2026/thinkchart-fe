@@ -1,25 +1,23 @@
 import { ChartItem } from './ChartItem.tsx';
-
-type Chart = {
-  id: string;
-  label: string;
-};
+import type { ChartListItem } from '../../types/index.ts';
 
 type ChartListProps = {
-  charts: Chart[];
+  charts: ChartListItem[];
   activeId: string | null;
   onSelect: (id: string) => void;
+  onDelete: (id: string) => void;
 };
 
-export const ChartList = ({ charts, activeId, onSelect }: ChartListProps) => {
+export const ChartList = ({ charts, activeId, onSelect, onDelete }: ChartListProps) => {
   return (
     <div class="flex flex-col gap-1">
       {charts.map(chart => (
         <ChartItem
-          key={chart.id}
+          id={chart.id}
           label={chart.label}
-          active={chart.id === activeId}
-          onClick={() => onSelect(chart.id)}
+          isActive={chart.id === activeId}
+          onSelect={() => onSelect(chart.id)}
+          onDelete={onDelete}
         />
       ))}
     </div>
