@@ -1,4 +1,6 @@
-import type { ChildrenType } from '../../types';
+import type { ChildrenType } from '../../types/index.ts';
+import { createRef } from '../../utils/index.ts';
+import { state } from '../../store/index.ts';
 
 type ModalProps = {
   id: string;
@@ -7,15 +9,13 @@ type ModalProps = {
   children?: ChildrenType;
 };
 
-export const openModal = (id: string) => {
-  const modal = document.getElementById(`modal-${id}`) as HTMLDialogElement | null;
-  modal?.showModal();
-};
-
 export const Modal = ({ id, width = 'w-[1100px]', height = 'h-[720px]', children }: ModalProps) => {
+  const modalRef = createRef<HTMLDialogElement>(null);
+
   const closeModal = () => {
-    const modal = document.getElementById(`modal-${id}`) as HTMLDialogElement | null;
-    modal?.close();
+    modalRef.current?.close();
+    modalRef.current?.remove();
+    state.activeId = null;
   };
 
   const handleCloseButtonClick = () => {
@@ -38,14 +38,18 @@ export const Modal = ({ id, width = 'w-[1100px]', height = 'h-[720px]', children
   return (
     <dialog
       id={`modal-${id}`}
-      className={`${width} ${height} relative m-auto max-h-[90vh] max-w-[95vw] rounded-[24px] bg-white/80 p-10 shadow-2xl backdrop:bg-black/40 backdrop:backdrop-blur-xs`}
+      ref={modalRef}
+      class={`${width} ${height} fixed inset-0 m-auto max-w-[95vw] rounded-[24px] bg-white/80 shadow-2xl backdrop:bg-black/40 backdrop:backdrop-blur-xs`}
       onclick={handleModalBackdropClick}
+      oneffect={(modalElement: HTMLDialogElement) => {
+        modalElement.showModal();
+      }}
     >
       <button
         id="btn-close-modal"
         type="button"
         aria-label="Close modal"
-        className="absolute top-6 right-6 h-10 w-10 cursor-pointer rounded-full hover:bg-zinc-300"
+        class="absolute top-6 right-6 h-10 w-10 cursor-pointer rounded-full hover:bg-zinc-100/60"
         onclick={handleCloseButtonClick}
       >
         ✕
