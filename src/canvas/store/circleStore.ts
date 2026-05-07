@@ -31,6 +31,13 @@ const CircleStore = () => {
         state.version += 1;
       }
     },
+    updateCirclePosition(index: number, x: number, y: number) {
+      if (index >= 0 && index < state.circles.length) {
+        state.circles[index].x = x;
+        state.circles[index].y = y;
+        state.version += 1;
+      }
+    },
   };
 };
 
