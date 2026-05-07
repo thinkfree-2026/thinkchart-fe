@@ -22,9 +22,14 @@ const CircleStore = () => {
         console.warn(`최대 생성 개수(${MAX_CIRCLE_COUNT})를 초과하여 더 이상 원을 생성할 수 없습니다.`);
         return;
       }
-
       state.circles.push(circle);
       state.version += 1;
+    },
+    deleteCircle(index: number) {
+      if (index >= 0 && index < state.circles.length) {
+        state.circles.splice(index, 1);
+        state.version += 1;
+      }
     },
   };
 };
