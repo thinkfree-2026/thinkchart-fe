@@ -1,7 +1,6 @@
 import { createStore } from '../../utils/index.ts';
+import { MAX_CIRCLE_COUNT } from '../constants/index.ts';
 import type { Circle } from '../types/index.ts';
-
-export const MAX_CIRCLES = 100000;
 
 const CircleStore = () => {
   const { state, subscribe } = createStore<{ circles: Circle[]; version: number }>({
@@ -19,8 +18,8 @@ const CircleStore = () => {
       return state.circles.length;
     },
     addCircle(circle: Circle) {
-      if (state.circles.length >= MAX_CIRCLES) {
-        console.warn(`최대 생성 개수(${MAX_CIRCLES})를 초과하여 더 이상 원을 생성할 수 없습니다.`);
+      if (state.circles.length >= MAX_CIRCLE_COUNT) {
+        console.warn(`최대 생성 개수(${MAX_CIRCLE_COUNT})를 초과하여 더 이상 원을 생성할 수 없습니다.`);
         return;
       }
 
