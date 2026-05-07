@@ -10,6 +10,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   let isSpacePressed = false;
   let isCameraDragging = false;
   let isCircleDragging = false;
+  let autoCameraPanningId: number | null = null;
 
   const currentMousePosition = { x: 0, y: 0 };
 
@@ -31,40 +32,73 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     }
   );
 
-  // 드래그 중인 원의 테두리가 화면 끝에 도달할 경우 카메라를 자동으로 이동시키는 로직
-  const panToMovedCirlce = () => {
+  // 이동중인 원의 테두리가 화면 끝에 도달할 경우 카메라를 이동시키는 로직
+  const updateAutoCameraPanning = () => {
+    if (!isCircleDragging) return;
+
     const { selectedIndex } = selectionStore.state.selection;
-    if (selectedIndex === -1) return;
+    if (selectedIndex === -1) {
+      stopAutoCameraPanning();
+      return;
+    }
 
     const circles = circleStore.getCircles();
     const targetCircle = circles[selectedIndex];
     const { camera } = cameraStore.state;
 
-    // 월드 좌표 기반의 원 위치를 현재 카메라 상태를 반영한 화면 픽셀 좌표로 변환
+    // 월드 좌표 기반의 원 위치를 현재 카메라 배율이 반영된 화면 픽셀 좌표로 변환
     const screenX = targetCircle.x * camera.scale + camera.x;
     const screenY = targetCircle.y * camera.scale + camera.y;
     const screenRadius = targetCircle.radius * camera.scale;
 
-    let panDeltaX = 0;
-    let panDeltaY = 0;
+    let panSpeedX = 0;
+    let panSpeedY = 0;
+    const BASE_PAN_SPEED = 8; // 매 프레임당 이동할 기준 픽셀 속도
 
-    // 좌측 및 우측 경계 도달 확인 후 카메라 이동 거리 산출
-    if (screenX - screenRadius < 0) {
-      panDeltaX = -(screenX - screenRadius);
-    } else if (screenX + screenRadius > canvas.clientWidth) {
-      panDeltaX = canvas.clientWidth - (screenX + screenRadius);
+    // 좌우 경계 도달 확인 및 이동 방향 결정
+    if (screenX - screenRadius <= 0) {
+      panSpeedX = BASE_PAN_SPEED;
+    } else if (screenX + screenRadius >= canvas.clientWidth) {
+      panSpeedX = -BASE_PAN_SPEED;
     }
 
-    // 상단 및 하단 경계 도달 확인 후 카메라 이동 거리 산출
-    if (screenY - screenRadius < 0) {
-      panDeltaY = -(screenY - screenRadius);
-    } else if (screenY + screenRadius > canvas.clientHeight) {
-      panDeltaY = canvas.clientHeight - (screenY + screenRadius);
+    // 상하 경계 도달 확인 및 이동 방향 결정
+    if (screenY - screenRadius <= 0) {
+      panSpeedY = BASE_PAN_SPEED;
+    } else if (screenY + screenRadius >= canvas.clientHeight) {
+      panSpeedY = -BASE_PAN_SPEED;
     }
 
-    // 경계 도달이 감지된 경우 카메라 스토어의 좌표 갱신 수행
-    if (panDeltaX !== 0 || panDeltaY !== 0) {
-      cameraStore.pan(panDeltaX, panDeltaY);
+    // 경계에 닿아 이동 속도가 발생한 경우 카메라 및 원 좌표 갱신
+    if (panSpeedX !== 0 || panSpeedY !== 0) {
+      cameraStore.pan(panSpeedX, panSpeedY);
+
+      // 카메라가 이동하는 만큼 원의 월드 좌표를 반대로 보정하여 화면 상에서 커서 위치에 고정
+      circleStore.updateCirclePosition(
+        selectedIndex,
+        targetCircle.x - panSpeedX / camera.scale,
+        targetCircle.y - panSpeedY / camera.scale
+      );
+
+      updateGuideCircleState();
+    }
+
+    // 마우스를 뗄 때까지 프레임마다 검사
+    autoCameraPanningId = requestAnimationFrame(updateAutoCameraPanning);
+  };
+
+  // 자동 카메라 이동 시작
+  const startAutoCameraPanning = () => {
+    if (autoCameraPanningId === null) {
+      autoCameraPanningId = requestAnimationFrame(updateAutoCameraPanning);
+    }
+  };
+
+  // 자동 카메라 이동 정지
+  const stopAutoCameraPanning = () => {
+    if (autoCameraPanningId !== null) {
+      cancelAnimationFrame(autoCameraPanningId);
+      autoCameraPanningId = null;
     }
   };
 
@@ -141,6 +175,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
       if (hoveredIndex !== -1) {
         isCircleDragging = true;
+        startAutoCameraPanning();
       } else {
         pulseAnimation.start();
       }
@@ -169,9 +204,6 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
         // 원 월드 좌표 수정
         circleStore.updateCirclePosition(selectedIndex, targetCircle.x + deltaWorldX, targetCircle.y + deltaWorldY);
-
-        // 이동 중 화면 끝 도달 시 카메라 이동
-        panToMovedCirlce();
       }
     }
 
@@ -183,12 +215,14 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     if (isCameraDragging) {
       isCameraDragging = false;
       canvas.style.cursor = isSpacePressed ? 'grabbing' : 'default';
+      stopAutoCameraPanning();
       updateGuideCircleState();
       return;
     }
 
     if (isCircleDragging) {
       isCircleDragging = false;
+      stopAutoCameraPanning();
       updateGuideCircleState();
       return;
     }
@@ -218,9 +252,12 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   };
 
   const onPointerLeave = () => {
-    guideCircleStore.hide();
-    selectionStore.setHover(-1);
-    pulseAnimation.cancel();
+    if (!isCircleDragging) {
+      guideCircleStore.hide();
+      selectionStore.setHover(-1);
+      pulseAnimation.cancel();
+      stopAutoCameraPanning();
+    }
   };
 
   const onWheel = (e: WheelEvent) => {
