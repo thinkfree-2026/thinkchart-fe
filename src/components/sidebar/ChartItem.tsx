@@ -1,24 +1,30 @@
+import { state } from '../../store/chartListStore.ts';
+
 type ChartItemProps = {
   id: string;
   label: string;
-  isActive: boolean;
-  onSelect: (id: string) => void;
-  onDelete: (id: string) => void;
 };
 
-export const ChartItem = ({ id, label, isActive, onSelect, onDelete }: ChartItemProps) => {
-  const handleClick = () => onSelect(id);
+export const ChartItem = ({ id, label }: ChartItemProps) => {
+  const handleClick = () => {
+    state.activeId = id;
+  };
 
   const handleDeleteClick = (e: MouseEvent) => {
     e.stopPropagation();
-    onDelete(id);
+
+    state.charts = state.charts.filter(chart => chart.id !== id);
+
+    if (state.activeId === id) {
+      state.activeId = null;
+    }
   };
 
   return (
     <div
       onclick={handleClick}
       class={`group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-caption transition ${
-        isActive ? 'bg-primary/10 font-semibold text-primary' : 'text-gray-500 hover:bg-gray-100'
+        state.activeId === id ? 'bg-primary/10 font-semibold text-primary' : 'text-gray-500 hover:bg-gray-100'
       } `}
     >
       <span>{label}</span>

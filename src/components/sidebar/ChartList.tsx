@@ -1,25 +1,31 @@
 import { ChartItem } from './ChartItem.tsx';
-import type { ChartListItem } from '../../types/index.ts';
+import { state, subscribe } from '../../store/chartListStore.ts';
+import { createRef } from '../../utils';
 
-type ChartListProps = {
-  charts: ChartListItem[];
-  activeId: string | null;
-  onSelect: (id: string) => void;
-  onDelete: (id: string) => void;
-};
+export const ChartList = () => {
+  const listRef = createRef<HTMLDivElement>(null);
 
-export const ChartList = ({ charts, activeId, onSelect, onDelete }: ChartListProps) => {
+  const renderList = () => {
+    return (
+      <>
+        {state.charts.map(chart => (
+          <ChartItem id={chart.id} label={chart.label} />
+        ))}
+      </>
+    );
+  };
+
+  const rerender = () => {
+    if (!listRef.current) return;
+    listRef.current.replaceChildren(renderList());
+  };
+
+  subscribe('charts', rerender);
+  subscribe('activeId', rerender);
+
   return (
-    <div class="flex flex-col gap-1">
-      {charts.map(chart => (
-        <ChartItem
-          id={chart.id}
-          label={chart.label}
-          isActive={chart.id === activeId}
-          onSelect={() => onSelect(chart.id)}
-          onDelete={onDelete}
-        />
-      ))}
+    <div ref={listRef} class="flex flex-col gap-1">
+      {renderList()}
     </div>
   );
 };
