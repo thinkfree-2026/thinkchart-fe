@@ -1,4 +1,6 @@
 import { state } from '../../store/chartListStore.ts';
+import { ChartModal } from '../modal';
+import { modalRoot } from '../../main.ts';
 
 type ChartItemProps = {
   id: string;
@@ -8,6 +10,7 @@ type ChartItemProps = {
 export const ChartItem = ({ id, label }: ChartItemProps) => {
   const handleClick = () => {
     state.activeId = id;
+    modalRoot.appendChild(<ChartModal id={id} />);
   };
 
   const handleDeleteClick = (e: MouseEvent) => {
