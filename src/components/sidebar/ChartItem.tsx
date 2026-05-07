@@ -9,8 +9,9 @@ type ChartItemProps = {
 
 export const ChartItem = ({ id, label }: ChartItemProps) => {
   const handleClick = () => {
+    if (state.activeId === id) return;
     state.activeId = id;
-    modalRoot.appendChild(<ChartModal id={id} />);
+    modalRoot.replaceChildren(<ChartModal id={id} />);
   };
 
   const handleDeleteClick = (e: MouseEvent) => {
