@@ -68,6 +68,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       const { selectedIndex } = selectionStore.state.selection;
 
       if (selectedIndex !== -1) {
+        e.preventDefault();
         // 선택된 원 제거
         circleStore.deleteCircle(selectedIndex);
 
@@ -116,20 +117,20 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   };
 
   // 커서 이동에 따른 카메라 패닝, 원 좌표 갱신 및 가이드 상태 업데이트
-  const onPointerMove = (event: PointerEvent) => {
+  const onPointerMove = (e: PointerEvent) => {
     const { camera } = cameraStore.state;
 
     // 마우스 이동 전후의 월드 좌표를 비교하여 실제 화면 이동 거리 산출
     const previousWorldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
-    const currentWorldPosition = screenToWorld(event.clientX, event.clientY, camera);
+    const currentWorldPosition = screenToWorld(e.clientX, e.clientY, camera);
     const deltaWorldX = currentWorldPosition.x - previousWorldPosition.x;
     const deltaWorldY = currentWorldPosition.y - previousWorldPosition.y;
 
-    currentMousePosition.x = event.clientX;
-    currentMousePosition.y = event.clientY;
+    currentMousePosition.x = e.clientX;
+    currentMousePosition.y = e.clientY;
 
     if (isCameraDragging) {
-      cameraStore.pan(event.movementX, event.movementY);
+      cameraStore.pan(e.movementX, e.movementY);
     } else if (isCircleDragging) {
       // 드래그 중인 원의 좌표를 마우스 이동 거리만큼 실시간 갱신
       const { selectedIndex } = selectionStore.state.selection;
@@ -143,7 +144,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   };
 
   // 클릭 해제 시 카메라/원 이동 종료 및 원 생성
-  const onPointerUp = (event: PointerEvent) => {
+  const onPointerUp = (e: PointerEvent) => {
     // 카메라 드래그 모드 해제
     if (isCameraDragging) {
       isCameraDragging = false;
@@ -159,7 +160,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       return;
     }
 
-    if (event.button === 0) {
+    if (e.button === 0) {
       if (!pulseAnimation.isCharging) return;
 
       const finalCount = pulseAnimation.stop();
