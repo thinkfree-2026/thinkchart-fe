@@ -8,11 +8,12 @@ import { createPulseAnimation } from './pulseAnimation.ts';
 // 사용자의 마우스 및 키보드 입력을 처리하고 렌더링 상태를 갱신하는 상호작용 제어기
 export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<() => void>) => {
   let isSpacePressed = false;
-  let isDragging = false;
+  let isCameraDragging = false;
+  let isCircleDragging = false;
 
   const currentMousePosition = { x: 0, y: 0 };
 
-  // 외부 모듈로 분리된 펄스 애니메이션 객체 초기화
+  // 펄스 애니메이션 초기화
   const pulseAnimation = createPulseAnimation(
     currentCount => {
       guideCircleStore.setRadius(CIRCLE_RADIUS * currentCount);
@@ -39,7 +40,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     selectionStore.setHover(hoveredIndex);
 
     const isOverCircle = hoveredIndex !== -1;
-    const shouldShowGuide = !isDragging && !isOverCircle;
+    const shouldShowGuide = !isCameraDragging && !isOverCircle;
 
     if (shouldShowGuide) {
       if (!pulseAnimation.isCharging) {
@@ -84,14 +85,14 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     }
   };
 
-  // 상호작용 시작 처리 (이동 준비 또는 객체 선택)
+  // 상호작용 시작 처리 (이동 준비 또는 원 선택)
   const onPointerDown = (e: PointerEvent) => {
     currentMousePosition.x = e.clientX;
     currentMousePosition.y = e.clientY;
 
     // 휠 클릭 또는 스페이스바 조합 시 캔버스 패닝 모드 진입
     if (e.button === 1 || (e.button === 0 && isSpacePressed)) {
-      isDragging = true;
+      isCameraDragging = true;
       canvas.style.cursor = 'default';
       updateGuideCircleState();
       return;
@@ -104,57 +105,79 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
       selectionStore.setSelect(hoveredIndex);
 
-      // 빈 공간 클릭 시 원 생성 애니메이션 트리거
-      if (hoveredIndex === -1) {
+      if (hoveredIndex !== -1) {
+        // 원 클릭 시 해당 원 이동시키는 드래그 모드 활성화
+        isCircleDragging = true;
+      } else {
+        // 빈 공간 클릭 시 원 생성 애니메이션 실행
         pulseAnimation.start();
       }
     }
   };
 
-  // 커서 이동에 따른 상태 변경 및 패닝 처리
-  const onPointerMove = (e: PointerEvent) => {
-    currentMousePosition.x = e.clientX;
-    currentMousePosition.y = e.clientY;
+  // 커서 이동에 따른 카메라 패닝, 원 좌표 갱신 및 가이드 상태 업데이트
+  const onPointerMove = (event: PointerEvent) => {
+    const { camera } = cameraStore.state;
 
-    if (isDragging) {
-      cameraStore.pan(e.movementX, e.movementY);
+    // 마우스 이동 전후의 월드 좌표를 비교하여 실제 화면 이동 거리 산출
+    const previousWorldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
+    const currentWorldPosition = screenToWorld(event.clientX, event.clientY, camera);
+    const deltaWorldX = currentWorldPosition.x - previousWorldPosition.x;
+    const deltaWorldY = currentWorldPosition.y - previousWorldPosition.y;
+
+    currentMousePosition.x = event.clientX;
+    currentMousePosition.y = event.clientY;
+
+    if (isCameraDragging) {
+      cameraStore.pan(event.movementX, event.movementY);
+    } else if (isCircleDragging) {
+      // 드래그 중인 원의 좌표를 마우스 이동 거리만큼 실시간 갱신
+      const { selectedIndex } = selectionStore.state.selection;
+      if (selectedIndex !== -1) {
+        const targetCircle = circleStore.getCircles()[selectedIndex];
+        circleStore.updateCirclePosition(selectedIndex, targetCircle.x + deltaWorldX, targetCircle.y + deltaWorldY);
+      }
     }
 
     updateGuideCircleState();
   };
 
-  // 상호작용 종료 처리 (패닝 종료 또는 원 생성 확정)
-  const onPointerUp = (e: PointerEvent) => {
-    if (isDragging) {
-      isDragging = false;
-      canvas.style.cursor = 'default';
+  // 클릭 해제 시 카메라/원 이동 종료 및 원 생성
+  const onPointerUp = (event: PointerEvent) => {
+    // 카메라 드래그 모드 해제
+    if (isCameraDragging) {
+      isCameraDragging = false;
+      canvas.style.cursor = isSpacePressed ? 'grabbing' : 'default';
       updateGuideCircleState();
       return;
     }
 
-    if (e.button === 0) {
+    // 원 드래그 모드 해제
+    if (isCircleDragging) {
+      isCircleDragging = false;
+      updateGuideCircleState();
+      return;
+    }
+
+    if (event.button === 0) {
       if (!pulseAnimation.isCharging) return;
 
-      currentMousePosition.x = e.clientX;
-      currentMousePosition.y = e.clientY;
-
-      const currentCount = pulseAnimation.stop();
-
+      const finalCount = pulseAnimation.stop();
       const { camera } = cameraStore.state;
       const worldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
 
       circleStore.addCircle({
         x: worldPosition.x,
         y: worldPosition.y,
-        radius: CIRCLE_RADIUS * currentCount,
+        radius: CIRCLE_RADIUS * finalCount,
         color: CIRCLE_COLOR,
       });
 
+      // 생성 직후 해당 원을 선택 상태로 변경
       const newCircleIndex = circleStore.getCircles().length - 1;
       selectionStore.setSelect(newCircleIndex);
 
       guideCircleStore.setRadius(CIRCLE_RADIUS);
-
       updateGuideCircleState();
     } else {
       pulseAnimation.cancel();
