@@ -61,6 +61,20 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       isSpacePressed = true;
       canvas.style.cursor = 'grabbing';
     }
+
+    // 선택된 원이 존재할 경우 백스페이스 키 입력 시 데이터 삭제 수행
+    if (e.code === 'Backspace') {
+      const { selectedIndex } = selectionStore.state.selection;
+
+      if (selectedIndex !== -1) {
+        // 선택된 원 제거
+        circleStore.deleteCircle(selectedIndex);
+
+        // 선택 상태 초기화 및 현재 마우스 위치의 호버 상태 다시 계산
+        selectionStore.setSelect(-1);
+        updateGuideCircleState();
+      }
+    }
   };
 
   const onKeyUp = (e: KeyboardEvent) => {
