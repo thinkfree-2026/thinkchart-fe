@@ -5,7 +5,7 @@ import { cameraStore, circleStore, guideCircleStore, selectionStore } from '../s
 import { getHoveredCircleIndex } from './collision.ts';
 import { createPulseAnimation } from './pulseAnimation.ts';
 
-// 사용자의 마우스 및 키보드 입력을 처리하고 렌더링 상태를 갱신하는 상호작용 제어기
+// 사용자 입력 처리 및 캔버스 컴포넌트 제어
 export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<() => void>) => {
   let isSpacePressed = false;
   let isCameraDragging = false;
@@ -13,7 +13,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
   const currentMousePosition = { x: 0, y: 0 };
 
-  // 펄스 애니메이션 초기화
+  // 원 생성 시 펄스 애니메이션 초기화
   const pulseAnimation = createPulseAnimation(
     currentCount => {
       guideCircleStore.setRadius(CIRCLE_RADIUS * currentCount);
@@ -31,7 +31,44 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     }
   );
 
-  // 입력, 카메라, 데이터 변경 시 렌더링 파이프라인에 전달할 상태 갱신
+  // 드래그 중인 원의 테두리가 화면 끝에 도달할 경우 카메라를 자동으로 이동시키는 로직
+  const panToMovedCirlce = () => {
+    const { selectedIndex } = selectionStore.state.selection;
+    if (selectedIndex === -1) return;
+
+    const circles = circleStore.getCircles();
+    const targetCircle = circles[selectedIndex];
+    const { camera } = cameraStore.state;
+
+    // 월드 좌표 기반의 원 위치를 현재 카메라 상태를 반영한 화면 픽셀 좌표로 변환
+    const screenX = targetCircle.x * camera.scale + camera.x;
+    const screenY = targetCircle.y * camera.scale + camera.y;
+    const screenRadius = targetCircle.radius * camera.scale;
+
+    let panDeltaX = 0;
+    let panDeltaY = 0;
+
+    // 좌측 및 우측 경계 도달 확인 후 카메라 이동 거리 산출
+    if (screenX - screenRadius < 0) {
+      panDeltaX = -(screenX - screenRadius);
+    } else if (screenX + screenRadius > canvas.clientWidth) {
+      panDeltaX = canvas.clientWidth - (screenX + screenRadius);
+    }
+
+    // 상단 및 하단 경계 도달 확인 후 카메라 이동 거리 산출
+    if (screenY - screenRadius < 0) {
+      panDeltaY = -(screenY - screenRadius);
+    } else if (screenY + screenRadius > canvas.clientHeight) {
+      panDeltaY = canvas.clientHeight - (screenY + screenRadius);
+    }
+
+    // 경계 도달이 감지된 경우 카메라 스토어의 좌표 갱신 수행
+    if (panDeltaX !== 0 || panDeltaY !== 0) {
+      cameraStore.pan(panDeltaX, panDeltaY);
+    }
+  };
+
+  // 가이드 원의 상태 및 가시성 실시간 업데이트
   const updateGuideCircleState = () => {
     const { camera } = cameraStore.state;
     const worldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
@@ -40,7 +77,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     selectionStore.setHover(hoveredIndex);
 
     const isOverCircle = hoveredIndex !== -1;
-    const shouldShowGuide = !isCameraDragging && !isOverCircle;
+    const shouldShowGuide = !isCameraDragging && !isCircleDragging && !isOverCircle;
 
     if (shouldShowGuide) {
       if (!pulseAnimation.isCharging) {
@@ -57,22 +94,19 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     }
   };
 
+  // 키보드 입력에 따라 액션 ㅈㅔ어
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.code === 'Space') {
       isSpacePressed = true;
       canvas.style.cursor = 'grabbing';
     }
 
-    // 선택된 원이 존재할 경우 백스페이스 키 입력 시 데이터 삭제 수행
+    // 백스페이스 키 입력 시 선택된 원 삭제
     if (e.code === 'Backspace') {
       const { selectedIndex } = selectionStore.state.selection;
-
       if (selectedIndex !== -1) {
         e.preventDefault();
-        // 선택된 원 제거
         circleStore.deleteCircle(selectedIndex);
-
-        // 선택 상태 초기화 및 현재 마우스 위치의 호버 상태 다시 계산
         selectionStore.setSelect(-1);
         updateGuideCircleState();
       }
@@ -86,12 +120,11 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     }
   };
 
-  // 상호작용 시작 처리 (이동 준비 또는 원 선택)
+  // 마우스 클릭 시 선택, 드래그 시작 또는 생성 애니메이션 실행
   const onPointerDown = (e: PointerEvent) => {
     currentMousePosition.x = e.clientX;
     currentMousePosition.y = e.clientY;
 
-    // 휠 클릭 또는 스페이스바 조합 시 캔버스 패닝 모드 진입
     if (e.button === 1 || (e.button === 0 && isSpacePressed)) {
       isCameraDragging = true;
       canvas.style.cursor = 'default';
@@ -107,20 +140,17 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       selectionStore.setSelect(hoveredIndex);
 
       if (hoveredIndex !== -1) {
-        // 원 클릭 시 해당 원 이동시키는 드래그 모드 활성화
         isCircleDragging = true;
       } else {
-        // 빈 공간 클릭 시 원 생성 애니메이션 실행
         pulseAnimation.start();
       }
     }
   };
 
-  // 커서 이동에 따른 카메라 패닝, 원 좌표 갱신 및 가이드 상태 업데이트
+  // 마우스 이동 시 카메라 & 원 위치 이동
   const onPointerMove = (e: PointerEvent) => {
     const { camera } = cameraStore.state;
 
-    // 마우스 이동 전후의 월드 좌표를 비교하여 실제 화면 이동 거리 산출
     const previousWorldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
     const currentWorldPosition = screenToWorld(e.clientX, e.clientY, camera);
     const deltaWorldX = currentWorldPosition.x - previousWorldPosition.x;
@@ -132,20 +162,24 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     if (isCameraDragging) {
       cameraStore.pan(e.movementX, e.movementY);
     } else if (isCircleDragging) {
-      // 드래그 중인 원의 좌표를 마우스 이동 거리만큼 실시간 갱신
       const { selectedIndex } = selectionStore.state.selection;
       if (selectedIndex !== -1) {
-        const targetCircle = circleStore.getCircles()[selectedIndex];
+        const circles = circleStore.getCircles();
+        const targetCircle = circles[selectedIndex];
+
+        // 원 월드 좌표 수정
         circleStore.updateCirclePosition(selectedIndex, targetCircle.x + deltaWorldX, targetCircle.y + deltaWorldY);
+
+        // 이동 중 화면 끝 도달 시 카메라 이동
+        panToMovedCirlce();
       }
     }
 
     updateGuideCircleState();
   };
 
-  // 클릭 해제 시 카메라/원 이동 종료 및 원 생성
+  // 클릭 해제 시 모든 드래그 상태 & 원 생성
   const onPointerUp = (e: PointerEvent) => {
-    // 카메라 드래그 모드 해제
     if (isCameraDragging) {
       isCameraDragging = false;
       canvas.style.cursor = isSpacePressed ? 'grabbing' : 'default';
@@ -153,7 +187,6 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       return;
     }
 
-    // 원 드래그 모드 해제
     if (isCircleDragging) {
       isCircleDragging = false;
       updateGuideCircleState();
@@ -174,7 +207,6 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
         color: CIRCLE_COLOR,
       });
 
-      // 생성 직후 해당 원을 선택 상태로 변경
       const newCircleIndex = circleStore.getCircles().length - 1;
       selectionStore.setSelect(newCircleIndex);
 
@@ -185,29 +217,24 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     }
   };
 
-  // 캔버스 이탈 시 예외 처리
   const onPointerLeave = () => {
     guideCircleStore.hide();
     selectionStore.setHover(-1);
     pulseAnimation.cancel();
   };
 
-  // 마우스 휠을 이용한 줌 인/아웃 또는 트랙패드 패닝 처리
   const onWheel = (e: WheelEvent) => {
     e.preventDefault();
-
     currentMousePosition.x = e.clientX;
     currentMousePosition.y = e.clientY;
 
     if (e.ctrlKey) {
       const zoomIntensity = 0.002;
       const zoomFactor = Math.exp(e.deltaY * -zoomIntensity);
-
       cameraStore.zoom(zoomFactor, e.clientX, e.clientY);
     } else {
       cameraStore.pan(-e.deltaX, -e.deltaY);
     }
-
     updateGuideCircleState();
   };
 
