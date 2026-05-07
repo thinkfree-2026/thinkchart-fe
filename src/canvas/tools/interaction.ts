@@ -56,36 +56,36 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     }
   };
 
-  const onKeyDown = (event: KeyboardEvent) => {
-    if (event.code === 'Space') {
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.code === 'Space') {
       isSpacePressed = true;
       canvas.style.cursor = 'grabbing';
     }
   };
 
-  const onKeyUp = (event: KeyboardEvent) => {
-    if (event.code === 'Space') {
+  const onKeyUp = (e: KeyboardEvent) => {
+    if (e.code === 'Space') {
       isSpacePressed = false;
       canvas.style.cursor = 'default';
     }
   };
 
   // 상호작용 시작 처리 (이동 준비 또는 객체 선택)
-  const onPointerDown = (event: PointerEvent) => {
-    currentMousePosition.x = event.clientX;
-    currentMousePosition.y = event.clientY;
+  const onPointerDown = (e: PointerEvent) => {
+    currentMousePosition.x = e.clientX;
+    currentMousePosition.y = e.clientY;
 
     // 휠 클릭 또는 스페이스바 조합 시 캔버스 패닝 모드 진입
-    if (event.button === 1 || (event.button === 0 && isSpacePressed)) {
+    if (e.button === 1 || (e.button === 0 && isSpacePressed)) {
       isDragging = true;
       canvas.style.cursor = 'default';
       updateGuideCircleState();
       return;
     }
 
-    if (event.button === 0) {
+    if (e.button === 0) {
       const { camera } = cameraStore.state;
-      const worldPosition = screenToWorld(event.clientX, event.clientY, camera);
+      const worldPosition = screenToWorld(e.clientX, e.clientY, camera);
       const hoveredIndex = getHoveredCircleIndex(worldPosition.x, worldPosition.y);
 
       selectionStore.setSelect(hoveredIndex);
@@ -98,19 +98,19 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   };
 
   // 커서 이동에 따른 상태 변경 및 패닝 처리
-  const onPointerMove = (event: PointerEvent) => {
-    currentMousePosition.x = event.clientX;
-    currentMousePosition.y = event.clientY;
+  const onPointerMove = (e: PointerEvent) => {
+    currentMousePosition.x = e.clientX;
+    currentMousePosition.y = e.clientY;
 
     if (isDragging) {
-      cameraStore.pan(event.movementX, event.movementY);
+      cameraStore.pan(e.movementX, e.movementY);
     }
 
     updateGuideCircleState();
   };
 
   // 상호작용 종료 처리 (패닝 종료 또는 원 생성 확정)
-  const onPointerUp = (event: PointerEvent) => {
+  const onPointerUp = (e: PointerEvent) => {
     if (isDragging) {
       isDragging = false;
       canvas.style.cursor = 'default';
@@ -118,8 +118,11 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       return;
     }
 
-    if (event.button === 0) {
+    if (e.button === 0) {
       if (!pulseAnimation.isCharging) return;
+
+      currentMousePosition.x = e.clientX;
+      currentMousePosition.y = e.clientY;
 
       const currentCount = pulseAnimation.stop();
 
@@ -152,19 +155,19 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   };
 
   // 마우스 휠을 이용한 줌 인/아웃 또는 트랙패드 패닝 처리
-  const onWheel = (event: WheelEvent) => {
-    event.preventDefault();
+  const onWheel = (e: WheelEvent) => {
+    e.preventDefault();
 
-    currentMousePosition.x = event.clientX;
-    currentMousePosition.y = event.clientY;
+    currentMousePosition.x = e.clientX;
+    currentMousePosition.y = e.clientY;
 
-    if (event.ctrlKey) {
+    if (e.ctrlKey) {
       const zoomIntensity = 0.002;
-      const zoomFactor = Math.exp(event.deltaY * -zoomIntensity);
+      const zoomFactor = Math.exp(e.deltaY * -zoomIntensity);
 
-      cameraStore.zoom(zoomFactor, event.clientX, event.clientY);
+      cameraStore.zoom(zoomFactor, e.clientX, e.clientY);
     } else {
-      cameraStore.pan(-event.deltaX, -event.deltaY);
+      cameraStore.pan(-e.deltaX, -e.deltaY);
     }
 
     updateGuideCircleState();
