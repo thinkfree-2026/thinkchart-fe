@@ -3,6 +3,7 @@ import './styles/global.css';
 import { App } from './App.tsx';
 
 const root = document.getElementById('app') as HTMLDivElement;
+export const modalRoot = document.getElementById('modal-root') as HTMLDivElement;
 
 function render() {
   root.innerHTML = '';

@@ -1,3 +1,5 @@
+import { createEffect } from './effect.ts';
+
 /**
  * JSX 문법을 실제 DOM 노드로 변환하는 핵심 렌더링 함수입니다.
  * @param {string|function} tag - HTML 태그 문자열 또는 커스텀 컴포넌트 함수
@@ -45,9 +47,20 @@ function applyProps(element, props) {
     const value = props[key];
     if (value === undefined || value === null) return;
 
+    if (key === 'ref' && value && typeof value === 'object') {
+      value.current = element;
+      return;
+    }
+
     // className 처리 (SVG 호환성을 위해 setAttribute 사용)
     if (key === 'className') {
       element.setAttribute('class', String(value));
+      return;
+    }
+
+    // createEffect 이벤트 처리
+    if (key === 'oneffect' && typeof value === 'function') {
+      createEffect(element, value);
       return;
     }
 
