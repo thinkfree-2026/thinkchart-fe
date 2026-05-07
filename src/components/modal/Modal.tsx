@@ -1,6 +1,6 @@
-import type { ChildrenType } from '../../types';
-import { createRef } from '../../utils';
-import { state } from '../../store';
+import type { ChildrenType } from '../../types/index.ts';
+import { createRef } from '../../utils/index.ts';
+import { state } from '../../store/index.ts';
 
 type ModalProps = {
   id: string;
