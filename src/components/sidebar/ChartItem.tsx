@@ -1,5 +1,5 @@
 import { state } from '../../store/chartListStore.ts';
-import { ChartModal } from '../modal';
+import { ChartModal } from '../modal/index.ts';
 import { modalRoot } from '../../main.ts';
 
 type ChartItemProps = {
