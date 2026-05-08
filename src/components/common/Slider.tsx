@@ -59,10 +59,10 @@ export const Slider = ({ id = 'slider', min = 0, max = 100, value = 100 }: Slide
         min={min}
         max={max}
         value={value}
-        onInput={handleSliderInput}
-        onMouseDown={showTooltip}
-        onMouseUp={hideTooltip}
-        onBlur={hideTooltip}
+        oninput={handleSliderInput}
+        onmousedown={showTooltip}
+        onmouseup={hideTooltip}
+        onblur={hideTooltip}
         class="h-1.5 w-full cursor-pointer rounded-full accent-primary"
       />
     </div>
