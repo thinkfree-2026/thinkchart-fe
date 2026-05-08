@@ -1,8 +1,7 @@
-type ButtonColor = 'primary' | 'secondary' | 'ghost';
+type ButtonColor = 'primary' | 'secondary' | 'outline';
 
 type ButtonProps = {
-  id?: string;
-  text: string;
+  label: string;
   type?: 'button' | 'submit';
   color?: ButtonColor;
   onClick: (e: MouseEvent) => void;
@@ -21,7 +20,7 @@ const COLOR_CLASS: Record<ButtonColor, string> = {
     shadow-md
   `,
 
-  ghost: `
+  outline: `
     bg-transparent text-primary
     hover:bg-primary/10
     shadow-sm
@@ -29,15 +28,14 @@ const COLOR_CLASS: Record<ButtonColor, string> = {
   `,
 };
 
-export const Button = ({ id, text, type = 'button', color = 'primary', onClick }: ButtonProps) => {
+export const Button = ({ label, type = 'button', color = 'primary', onClick }: ButtonProps) => {
   return (
     <button
-      id={id}
       type={type}
-      class={`inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full px-8 transition-all duration-200 active:scale-[0.98] ${COLOR_CLASS[color]}`}
+      class={`inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full transition-all duration-200 active:scale-[0.98] ${COLOR_CLASS[color]}`}
       onclick={onClick}
     >
-      {text}
+      {label}
     </button>
   );
 };
