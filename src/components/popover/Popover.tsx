@@ -1,5 +1,4 @@
-import { Input } from '../common/index.ts';
-import { Slider } from '../common/index.ts';
+import { Input, Slider } from '../common/index.ts';
 
 type PopoverProps = {
   id?: string;
