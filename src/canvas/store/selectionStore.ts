@@ -5,7 +5,7 @@ const createSelectionStore = () => {
   const { state, subscribe } = createStore<{ selection: Selection }>({
     selection: {
       hoveredIndex: -1,
-      selectedIndex: -1,
+      selectedIndices: [],
     },
   });
 
@@ -22,8 +22,24 @@ const createSelectionStore = () => {
     setSelect(index: number) {
       state.selection = {
         ...state.selection,
-        selectedIndex: index,
+        selectedIndices: [index],
       };
+    },
+    setUnselect() {
+      state.selection = {
+        ...state.selection,
+        selectedIndices: [],
+      };
+    },
+    addSelect(index: number) {
+      if (index === -1) return;
+
+      if (!state.selection.selectedIndices.includes(index)) {
+        state.selection = {
+          ...state.selection,
+          selectedIndices: [...state.selection.selectedIndices, index],
+        };
+      }
     },
   };
 };
