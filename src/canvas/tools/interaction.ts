@@ -5,14 +5,16 @@ import { cameraStore, circleStore, guideCircleStore, selectionStore } from '../s
 import { getHoveredCircleIndex } from './collision.ts';
 import { createPulseAnimation } from './pulseAnimation.ts';
 
-// 사용자의 마우스 및 키보드 입력을 처리하고 렌더링 상태를 갱신하는 상호작용 제어기
+// 사용자 입력 처리 및 캔버스 컴포넌트 제어
 export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<() => void>) => {
   let isSpacePressed = false;
-  let isDragging = false;
+  let isCameraDragging = false;
+  let isCircleDragging = false;
+  let autoCameraPanningId: number | null = null;
 
   const currentMousePosition = { x: 0, y: 0 };
 
-  // 외부 모듈로 분리된 펄스 애니메이션 객체 초기화
+  // 원 생성 시 펄스 애니메이션 초기화
   const pulseAnimation = createPulseAnimation(
     currentCount => {
       guideCircleStore.setRadius(CIRCLE_RADIUS * currentCount);
@@ -30,7 +32,79 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     }
   );
 
-  // 입력, 카메라, 데이터 변경 시 렌더링 파이프라인에 전달할 상태 갱신
+  // 이동중인 원의 테두리가 화면 끝에 도달할 경우 카메라를 이동시키는 로직
+  const updateAutoCameraPanning = () => {
+    if (!isCircleDragging) return;
+
+    const { selectedIndex } = selectionStore.state.selection;
+
+    if (selectedIndex === -1) {
+      stopAutoCameraPanning();
+      return;
+    }
+
+    const circles = circleStore.getCircles();
+    const targetCircle = circles[selectedIndex];
+    const { camera } = cameraStore.state;
+
+    // 월드 좌표 기반의 원 위치를 현재 카메라 배율이 반영된 화면 픽셀 좌표로 변환
+    const screenX = targetCircle.x * camera.scale + camera.x;
+    const screenY = targetCircle.y * camera.scale + camera.y;
+    const screenRadius = targetCircle.radius * camera.scale;
+
+    let panSpeedX = 0;
+    let panSpeedY = 0;
+    const PAN_SPEED = 8; // 매 프레임당 이동할 기준 픽셀 속도
+
+    // 좌우 경계 도달 확인 및 이동 방향 결정
+    if (screenX - screenRadius <= 0) {
+      panSpeedX = PAN_SPEED;
+    }
+    if (screenX + screenRadius >= canvas.clientWidth) {
+      panSpeedX = -PAN_SPEED;
+    }
+    // 상하 경계 도달 확인 및 이동 방향 결정
+    if (screenY - screenRadius <= 0) {
+      panSpeedY = PAN_SPEED;
+    }
+    if (screenY + screenRadius >= canvas.clientHeight) {
+      panSpeedY = -PAN_SPEED;
+    }
+
+    // 경계에 닿아 이동 속도가 발생한 경우 카메라 및 원 좌표 갱신
+    if (panSpeedX !== 0 || panSpeedY !== 0) {
+      cameraStore.pan(panSpeedX, panSpeedY);
+
+      // 카메라가 이동하는 만큼 원의 월드 좌표를 반대로 보정하여 화면 상에서 커서 위치에 고정
+      circleStore.updateCirclePosition(
+        selectedIndex,
+        targetCircle.x - panSpeedX / camera.scale,
+        targetCircle.y - panSpeedY / camera.scale
+      );
+
+      updateGuideCircleState();
+    }
+
+    // 마우스를 뗄 때까지 프레임마다 검사
+    autoCameraPanningId = requestAnimationFrame(updateAutoCameraPanning);
+  };
+
+  // 자동 카메라 이동 시작
+  const startAutoCameraPanning = () => {
+    if (autoCameraPanningId === null) {
+      autoCameraPanningId = requestAnimationFrame(updateAutoCameraPanning);
+    }
+  };
+
+  // 자동 카메라 이동 정지
+  const stopAutoCameraPanning = () => {
+    if (autoCameraPanningId !== null) {
+      cancelAnimationFrame(autoCameraPanningId);
+      autoCameraPanningId = null;
+    }
+  };
+
+  // 가이드 원의 상태 및 가시성 실시간 업데이트
   const updateGuideCircleState = () => {
     const { camera } = cameraStore.state;
     const worldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
@@ -39,27 +113,43 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     selectionStore.setHover(hoveredIndex);
 
     const isOverCircle = hoveredIndex !== -1;
-    const shouldShowGuide = !isDragging && !isOverCircle;
+    const shouldShowGuide = !isCameraDragging && !isCircleDragging && !isOverCircle;
 
-    if (shouldShowGuide) {
-      if (!pulseAnimation.isCharging) {
-        guideCircleStore.set({
-          x: worldPosition.x,
-          y: worldPosition.y,
-          radius: CIRCLE_RADIUS * pulseAnimation.currentCount,
-          color: GUIDE_CIRCLE_COLOR,
-        });
-      }
-      guideCircleStore.show();
-    } else {
+    if (!shouldShowGuide) {
       guideCircleStore.hide();
+      pulseAnimation.cancel();
+      return;
     }
+
+    if (!pulseAnimation.isCharging) {
+      guideCircleStore.set({
+        x: worldPosition.x,
+        y: worldPosition.y,
+        radius: CIRCLE_RADIUS * pulseAnimation.currentCount,
+        color: GUIDE_CIRCLE_COLOR,
+      });
+    }
+
+    guideCircleStore.show();
   };
 
+  // 키보드 입력에 따라 액션 제어
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.code === 'Space') {
       isSpacePressed = true;
       canvas.style.cursor = 'grabbing';
+    }
+
+    // 백스페이스 키 입력 시 선택된 원 삭제
+    if (e.code === 'Backspace') {
+      const { selectedIndex } = selectionStore.state.selection;
+
+      if (selectedIndex !== -1) {
+        e.preventDefault();
+        circleStore.deleteCircle(selectedIndex);
+        selectionStore.setSelect(-1);
+        updateGuideCircleState();
+      }
     }
   };
 
@@ -70,14 +160,13 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     }
   };
 
-  // 상호작용 시작 처리 (이동 준비 또는 객체 선택)
+  // 마우스 클릭 시 선택, 드래그 시작 또는 생성 애니메이션 실행
   const onPointerDown = (e: PointerEvent) => {
     currentMousePosition.x = e.clientX;
     currentMousePosition.y = e.clientY;
 
-    // 휠 클릭 또는 스페이스바 조합 시 캔버스 패닝 모드 진입
     if (e.button === 1 || (e.button === 0 && isSpacePressed)) {
-      isDragging = true;
+      isCameraDragging = true;
       canvas.style.cursor = 'default';
       updateGuideCircleState();
       return;
@@ -90,49 +179,76 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
       selectionStore.setSelect(hoveredIndex);
 
-      // 빈 공간 클릭 시 원 생성 애니메이션 트리거
-      if (hoveredIndex === -1) {
-        pulseAnimation.start();
+      if (hoveredIndex !== -1) {
+        isCircleDragging = true;
+        startAutoCameraPanning();
+        return;
       }
+
+      pulseAnimation.start();
     }
   };
 
-  // 커서 이동에 따른 상태 변경 및 패닝 처리
+  // 마우스 이동 시 카메라 & 원 위치 이동
   const onPointerMove = (e: PointerEvent) => {
+    const { camera } = cameraStore.state;
+
+    const previousWorldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
+    const currentWorldPosition = screenToWorld(e.clientX, e.clientY, camera);
+    const deltaWorldX = currentWorldPosition.x - previousWorldPosition.x;
+    const deltaWorldY = currentWorldPosition.y - previousWorldPosition.y;
+
     currentMousePosition.x = e.clientX;
     currentMousePosition.y = e.clientY;
 
-    if (isDragging) {
+    if (isCameraDragging) {
       cameraStore.pan(e.movementX, e.movementY);
+    }
+
+    if (isCircleDragging) {
+      const { selectedIndex } = selectionStore.state.selection;
+
+      if (selectedIndex !== -1) {
+        const circles = circleStore.getCircles();
+        const targetCircle = circles[selectedIndex];
+
+        // 원 월드 좌표 수정
+        circleStore.updateCirclePosition(selectedIndex, targetCircle.x + deltaWorldX, targetCircle.y + deltaWorldY);
+      }
     }
 
     updateGuideCircleState();
   };
 
-  // 상호작용 종료 처리 (패닝 종료 또는 원 생성 확정)
+  // 클릭 해제 시 모든 드래그 상태 & 원 생성
   const onPointerUp = (e: PointerEvent) => {
-    if (isDragging) {
-      isDragging = false;
-      canvas.style.cursor = 'default';
+    if (isCameraDragging) {
+      isCameraDragging = false;
+      canvas.style.cursor = isSpacePressed ? 'grabbing' : 'default';
+      stopAutoCameraPanning();
       updateGuideCircleState();
       return;
     }
 
+    if (isCircleDragging) {
+      isCircleDragging = false;
+      stopAutoCameraPanning();
+      updateGuideCircleState();
+      return;
+    }
+
+    if (!pulseAnimation.isCharging) return;
+
+    // 좌클릭
     if (e.button === 0) {
-      if (!pulseAnimation.isCharging) return;
-
-      currentMousePosition.x = e.clientX;
-      currentMousePosition.y = e.clientY;
-
-      const currentCount = pulseAnimation.stop();
-
+      const finalCount = pulseAnimation.stop();
       const { camera } = cameraStore.state;
       const worldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
 
       circleStore.addCircle({
         x: worldPosition.x,
         y: worldPosition.y,
-        radius: CIRCLE_RADIUS * currentCount,
+        radius: CIRCLE_RADIUS * finalCount,
         color: CIRCLE_COLOR,
       });
 
@@ -140,31 +256,27 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       selectionStore.setSelect(newCircleIndex);
 
       guideCircleStore.setRadius(CIRCLE_RADIUS);
-
       updateGuideCircleState();
-    } else {
-      pulseAnimation.cancel();
     }
   };
 
-  // 캔버스 이탈 시 예외 처리
   const onPointerLeave = () => {
-    guideCircleStore.hide();
-    selectionStore.setHover(-1);
-    pulseAnimation.cancel();
+    if (!isCircleDragging) {
+      guideCircleStore.hide();
+      selectionStore.setHover(-1);
+      pulseAnimation.cancel();
+      stopAutoCameraPanning();
+    }
   };
 
-  // 마우스 휠을 이용한 줌 인/아웃 또는 트랙패드 패닝 처리
   const onWheel = (e: WheelEvent) => {
     e.preventDefault();
-
     currentMousePosition.x = e.clientX;
     currentMousePosition.y = e.clientY;
 
     if (e.ctrlKey) {
       const zoomIntensity = 0.002;
       const zoomFactor = Math.exp(e.deltaY * -zoomIntensity);
-
       cameraStore.zoom(zoomFactor, e.clientX, e.clientY);
     } else {
       cameraStore.pan(-e.deltaX, -e.deltaY);
