@@ -12,7 +12,7 @@ export const Popover = ({ id = 'popover', title = 'Bar Options', value, onDelete
     <div id={id} class="w-full rounded-3xl bg-white px-3 py-3 shadow-md">
       <header class="flex items-center justify-between">
         <div class="text-sm font-semibold">{title}</div>
-        <button type="button" onclick={onDelete} class="text-sm transition hover:opacity-70">
+        <button type="button" onclick={onDelete} class="text-sm transition hover:opacity-70" aria-label="Delete">
           🗑
         </button>
       </header>
