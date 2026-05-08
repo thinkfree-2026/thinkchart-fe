@@ -41,6 +41,16 @@ const createSelectionStore = () => {
         };
       }
     },
+    deleteSelect(index: number) {
+      if (index === -1) return;
+
+      if (state.selection.selectedIndices.includes(index)) {
+        state.selection = {
+          ...state.selection,
+          selectedIndices: state.selection.selectedIndices.filter(selectedIndex => selectedIndex !== index),
+        };
+      }
+    },
   };
 };
 

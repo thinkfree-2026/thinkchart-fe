@@ -210,6 +210,16 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
         return;
       }
 
+      // Ctrl +좌클릭 시 선택된 원에 추가 및 삭제
+      if (e.ctrlKey) {
+        if (!selectedIndices.includes(hoveredIndex)) {
+          selectionStore.addSelect(hoveredIndex);
+        } else {
+          selectionStore.deleteSelect(hoveredIndex);
+        }
+        return;
+      }
+
       if (!selectedIndices.includes(hoveredIndex)) {
         selectionStore.setSelect(hoveredIndex);
       }
