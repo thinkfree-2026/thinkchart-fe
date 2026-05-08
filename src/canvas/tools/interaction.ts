@@ -37,6 +37,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     if (!isCircleDragging) return;
 
     const { selectedIndex } = selectionStore.state.selection;
+
     if (selectedIndex === -1) {
       stopAutoCameraPanning();
       return;
@@ -53,20 +54,21 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
     let panSpeedX = 0;
     let panSpeedY = 0;
-    const BASE_PAN_SPEED = 8; // 매 프레임당 이동할 기준 픽셀 속도
+    const PAN_SPEED = 8; // 매 프레임당 이동할 기준 픽셀 속도
 
     // 좌우 경계 도달 확인 및 이동 방향 결정
     if (screenX - screenRadius <= 0) {
-      panSpeedX = BASE_PAN_SPEED;
-    } else if (screenX + screenRadius >= canvas.clientWidth) {
-      panSpeedX = -BASE_PAN_SPEED;
+      panSpeedX = PAN_SPEED;
     }
-
+    if (screenX + screenRadius >= canvas.clientWidth) {
+      panSpeedX = -PAN_SPEED;
+    }
     // 상하 경계 도달 확인 및 이동 방향 결정
     if (screenY - screenRadius <= 0) {
-      panSpeedY = BASE_PAN_SPEED;
-    } else if (screenY + screenRadius >= canvas.clientHeight) {
-      panSpeedY = -BASE_PAN_SPEED;
+      panSpeedY = PAN_SPEED;
+    }
+    if (screenY + screenRadius >= canvas.clientHeight) {
+      panSpeedY = -PAN_SPEED;
     }
 
     // 경계에 닿아 이동 속도가 발생한 경우 카메라 및 원 좌표 갱신
@@ -113,22 +115,25 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     const isOverCircle = hoveredIndex !== -1;
     const shouldShowGuide = !isCameraDragging && !isCircleDragging && !isOverCircle;
 
-    if (shouldShowGuide) {
-      if (!pulseAnimation.isCharging) {
-        guideCircleStore.set({
-          x: worldPosition.x,
-          y: worldPosition.y,
-          radius: CIRCLE_RADIUS * pulseAnimation.currentCount,
-          color: GUIDE_CIRCLE_COLOR,
-        });
-      }
-      guideCircleStore.show();
-    } else {
+    if (!shouldShowGuide) {
       guideCircleStore.hide();
+      pulseAnimation.cancel();
+      return;
     }
+
+    if (!pulseAnimation.isCharging) {
+      guideCircleStore.set({
+        x: worldPosition.x,
+        y: worldPosition.y,
+        radius: CIRCLE_RADIUS * pulseAnimation.currentCount,
+        color: GUIDE_CIRCLE_COLOR,
+      });
+    }
+
+    guideCircleStore.show();
   };
 
-  // 키보드 입력에 따라 액션 ㅈㅔ어
+  // 키보드 입력에 따라 액션 제어
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.code === 'Space') {
       isSpacePressed = true;
@@ -138,6 +143,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     // 백스페이스 키 입력 시 선택된 원 삭제
     if (e.code === 'Backspace') {
       const { selectedIndex } = selectionStore.state.selection;
+
       if (selectedIndex !== -1) {
         e.preventDefault();
         circleStore.deleteCircle(selectedIndex);
@@ -176,9 +182,10 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       if (hoveredIndex !== -1) {
         isCircleDragging = true;
         startAutoCameraPanning();
-      } else {
-        pulseAnimation.start();
+        return;
       }
+
+      pulseAnimation.start();
     }
   };
 
@@ -196,8 +203,11 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
     if (isCameraDragging) {
       cameraStore.pan(e.movementX, e.movementY);
-    } else if (isCircleDragging) {
+    }
+
+    if (isCircleDragging) {
       const { selectedIndex } = selectionStore.state.selection;
+
       if (selectedIndex !== -1) {
         const circles = circleStore.getCircles();
         const targetCircle = circles[selectedIndex];
@@ -227,9 +237,10 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       return;
     }
 
-    if (e.button === 0) {
-      if (!pulseAnimation.isCharging) return;
+    if (!pulseAnimation.isCharging) return;
 
+    // 좌클릭
+    if (e.button === 0) {
       const finalCount = pulseAnimation.stop();
       const { camera } = cameraStore.state;
       const worldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
@@ -246,8 +257,6 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
       guideCircleStore.setRadius(CIRCLE_RADIUS);
       updateGuideCircleState();
-    } else {
-      pulseAnimation.cancel();
     }
   };
 
@@ -272,6 +281,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     } else {
       cameraStore.pan(-e.deltaX, -e.deltaY);
     }
+
     updateGuideCircleState();
   };
 
