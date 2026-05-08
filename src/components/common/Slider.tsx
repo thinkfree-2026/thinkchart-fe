@@ -24,6 +24,8 @@ export const Slider = ({ id = 'slider', min = 0, max = 100, value = 100 }: Slide
     const min = Number(slider.min);
     const max = Number(slider.max);
 
+    if (min === max) return;
+
     const percent = ((current - min) / (max - min)) * 100;
 
     if (tooltipRef.current) {
