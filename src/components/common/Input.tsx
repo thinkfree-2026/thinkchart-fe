@@ -1,13 +1,13 @@
 type InputProps = {
   id?: string;
-  type?: string;
+  type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'search';
   value?: string | number;
   placeholder?: string;
   onInput?: (e: Event) => void;
   onBlur?: (e: Event) => void;
 };
 
-export const Input = ({ id, type = 'string', value = '', placeholder = '', onInput, onBlur }: InputProps = {}) => {
+export const Input = ({ id, type = 'text', value = '', placeholder = '', onInput, onBlur }: InputProps = {}) => {
   return (
     <input
       id={id}
