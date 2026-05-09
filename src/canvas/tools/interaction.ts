@@ -231,6 +231,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
     // 우클릭
     if (e.button === 2) {
+      guideCircleStore.hide();
       // 선택되어 있는 원 해제
       selectionStore.setUnselect();
 
