@@ -5,9 +5,10 @@ type SliderProps = {
   min?: number;
   max?: number;
   value?: number;
+  onInput?: (value: number) => void;
 };
 
-export const Slider = ({ id = 'slider', min = 0, max = 100, value = 100 }: SliderProps = {}) => {
+export const Slider = ({ id = 'slider', min = 0, max = 100, value = 100, onInput }: SliderProps = {}) => {
   const tooltipRef = createRef<HTMLOutputElement>(null);
   const sliderRef = createRef<HTMLInputElement>(null);
 
@@ -36,9 +37,11 @@ export const Slider = ({ id = 'slider', min = 0, max = 100, value = 100 }: Slide
 
   const handleSliderInput = (e: Event) => {
     const slider = e.target as HTMLInputElement;
+    const nextValue = Number(slider.value);
 
     showTooltip();
     updateSliderUI(slider);
+    onInput?.(nextValue);
   };
 
   return (
