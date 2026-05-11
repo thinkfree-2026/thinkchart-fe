@@ -8,9 +8,15 @@ type InputProps = {
   onBlur?: (e: Event) => void;
 };
 
-export const Input = (props: InputProps = {}) => {
-  const { id, type = 'text', value = '', placeholder = '', disabled = false, onInput, onBlur } = props;
-
+export const Input = ({
+  id,
+  type = 'text',
+  value = '',
+  placeholder = '',
+  disabled = false,
+  onInput,
+  onBlur,
+}: InputProps = {}) => {
   return (
     <input
       id={id}
