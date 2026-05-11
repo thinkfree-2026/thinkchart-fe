@@ -40,16 +40,15 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     ctx.scale(camera.scale, camera.scale);
 
     const circles = circleStore.getCircles();
-    const { hoveredIndex, selectedIndex } = selectionStore.state.selection;
+    const { hoveredIndex, selectedIndices } = selectionStore.state.selection;
 
     // 스토어에 저장된 실제 원 데이터를 순회하며 렌더링 진행
-    for (let index = 0; index < circles.length; index++) {
-      const circle = circles[index];
+    circles.forEach((circle, index) => {
       const isHovered = index === hoveredIndex;
-      const isSelected = index === selectedIndex;
+      const isSelected = selectedIndices.includes(index);
 
       drawCircle(ctx, circle, isHovered, isSelected);
-    }
+    });
 
     // 마우스를 따라다니는 가이드 원이 활성화된 상태일 경우 화면에 렌더링
     const { guideCircle } = guideCircleStore.state;
@@ -60,23 +59,27 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     const BASE_THICKNESS = 0.75;
 
     // 호버 상태 처리
-    if (hoveredIndex !== -1 && hoveredIndex !== selectedIndex && hoveredIndex < circles.length) {
+    if (hoveredIndex !== -1 && !selectedIndices.includes(hoveredIndex) && hoveredIndex < circles.length) {
       drawHighlight(ctx, camera.scale, circles[hoveredIndex], false, 0.0, true, BASE_THICKNESS * 2);
     }
 
     // 선택 상태 처리
-    if (selectedIndex !== -1 && selectedIndex < circles.length) {
-      const isHoveringSelected = hoveredIndex === selectedIndex;
+    if (selectedIndices.length > 0) {
+      selectedIndices.forEach(index => {
+        if (index < circles.length) {
+          const isHoveringSelected = hoveredIndex === index;
 
-      drawHighlight(
-        ctx,
-        camera.scale,
-        circles[selectedIndex],
-        true,
-        BASE_THICKNESS,
-        true,
-        isHoveringSelected ? BASE_THICKNESS * 2 : BASE_THICKNESS
-      );
+          drawHighlight(
+            ctx,
+            camera.scale,
+            circles[index],
+            true,
+            BASE_THICKNESS,
+            true,
+            isHoveringSelected ? BASE_THICKNESS * 2 : BASE_THICKNESS
+          );
+        }
+      });
     }
   };
 
