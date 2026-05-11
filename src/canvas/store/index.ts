@@ -1,3 +1,4 @@
+export * from './brushStore.ts';
 export * from './cameraStore.ts';
 export * from './circleStore.ts';
 export * from './guideCircleStore.ts';
