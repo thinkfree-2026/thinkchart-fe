@@ -1,5 +1,6 @@
-import { cameraStore, circleStore, guideCircleStore, selectionStore } from '../store/index.ts';
+import { brushStore, cameraStore, circleStore, guideCircleStore, selectionStore } from '../store/index.ts';
 
+import { drawBrush } from './brushRenderer.ts';
 import { drawCircle } from './circleRenderer.ts';
 import { drawHighlight } from './highlightRenderer.ts';
 
@@ -50,6 +51,11 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
       drawCircle(ctx, circle, isHovered, isSelected);
     });
 
+    const { brush } = brushStore.state;
+    if (brush.isVisible && brush.points.length > 0) {
+      drawBrush(ctx, camera.scale, brush.points);
+    }
+
     // 마우스를 따라다니는 가이드 원이 활성화된 상태일 경우 화면에 렌더링
     const { guideCircle } = guideCircleStore.state;
     if (guideCircle.isVisible && guideCircle.circle) {
@@ -96,6 +102,7 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
   const unsubscribeCircle = circleStore.subscribe('version', requestRender);
   const unsubscribeGuideCircle = guideCircleStore.subscribe('guideCircle', requestRender);
   const unsubscribeSelection = selectionStore.subscribe('selection', requestRender);
+  const unsubscribeBrush = brushStore.subscribe('brush', requestRender);
 
   // 캔버스 HTML 요소의 크기 변화를 감지하는 옵저버 등록
   const resizeObserver = new ResizeObserver(entries => {
@@ -112,6 +119,7 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     unsubscribeCircle();
     unsubscribeGuideCircle();
     unsubscribeSelection();
+    unsubscribeBrush();
   });
 
   // 컨트롤러 초기화 직후 화면을 꽉 채우기 위해 리사이즈 이벤트 강제 실행
