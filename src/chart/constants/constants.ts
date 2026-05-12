@@ -2,11 +2,11 @@ export const CHART_SIZES = {
   PADDING_TOP: 30,
   PADDING_BOTTOM: 40,
   /** X축 제목 표시 시 하단에 추가로 확보하는 여백 */
-  AXIS_X_TITLE_EXTRA_BOTTOM: 22,
+  AXIS_X_TITLE_SPACE: 22,
   /** Y축 눈금 숫자용 왼쪽 여백 */
-  AXIS_Y_TICK_GUTTER: 42,
+  AXIS_Y_AXIS_SPACE: 42,
   /** Y축 이름(세로) 표시 시 추가 왼쪽 여백 */
-  AXIS_Y_TITLE_BAND: 26,
+  AXIS_Y_TITLE_SPACE: 26,
   BAR_WIDTH: 48,
   RADIUS: 8,
   BROKEN_GAP: 10,

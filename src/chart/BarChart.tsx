@@ -13,8 +13,8 @@ export const BarChart = ({ data, onBarClick, onChartReady }: BarChartProps) => {
   const minCanvasWidth =
     barCount * CHART_SIZES.BAR_WIDTH +
     (barCount + 1) * MIN_SPACING +
-    CHART_SIZES.AXIS_Y_TICK_GUTTER +
-    CHART_SIZES.AXIS_Y_TITLE_BAND;
+    CHART_SIZES.AXIS_Y_AXIS_SPACE +
+    CHART_SIZES.AXIS_Y_TITLE_SPACE;
 
   return (
     <div ref={canvasWrapperRef} class="relative h-full w-full overflow-x-auto overflow-y-hidden">
