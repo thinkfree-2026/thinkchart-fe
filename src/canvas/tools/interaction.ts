@@ -1,6 +1,14 @@
-import { CIRCLE_COLOR, CIRCLE_RADIUS, GUIDE_CIRCLE_COLOR } from '../constants/index.ts';
+import {
+  CIRCLE_COLOR,
+  CIRCLE_RADIUS,
+  CIRCLE_VALUE,
+  GUIDE_CIRCLE_COLOR,
+  MAX_RADIUS,
+  RADIUS_RATIO,
+  VALUE_RATIO,
+} from '../constants/index.ts';
 import { screenToWorld } from '../core/index.ts';
-import { cameraStore, circleStore, guideCircleStore, selectionStore } from '../store/index.ts';
+import { brushStore, cameraStore, circleStore, guideCircleStore, selectionStore } from '../store/index.ts';
 
 import { getHoveredCircleIndex } from './collision.ts';
 import { createPulseAnimation } from './pulseAnimation.ts';
@@ -13,22 +21,29 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   let isRightClickDragging = false;
   let autoCameraPanningId: number | null = null;
   let hasMovedDuringClick = false; // 원 선택 후 이동 여부
+  let brushAnimationId: number | null = null;
+
+  const brushPoints: Array<{ x: number; y: number }> = [];
+  const MAX_BRUSH_LENGTH = 15; // 브러시 최대 길이
 
   const currentMousePosition = { x: 0, y: 0 };
 
   // 원 생성 시 펄스 애니메이션 초기화
   const pulseAnimation = createPulseAnimation(
-    currentCount => {
-      guideCircleStore.setRadius(CIRCLE_RADIUS * currentCount);
-    },
+    () => {},
     (pulseSize, currentCount) => {
       const { camera } = cameraStore.state;
       const worldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
 
+      const value = CIRCLE_VALUE + VALUE_RATIO * (currentCount - 1);
+      const baseRadius = CIRCLE_RADIUS * Math.sqrt(value / RADIUS_RATIO);
+      const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
+
       guideCircleStore.set({
         x: worldPosition.x,
         y: worldPosition.y,
-        radius: CIRCLE_RADIUS * currentCount + pulseSize,
+        value,
+        radius: clampedRadius + pulseSize,
         color: GUIDE_CIRCLE_COLOR,
       });
     }
@@ -71,7 +86,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     const PAN_SPEED = 8; // 매 프레임당 이동할 기준 픽셀 속도
 
     // 좌우 경계 도달 확인 및 이동 방향 결정
-    if (minScreenX <= 0) {
+    if (minScreenX <= 252) {
       panSpeedX = PAN_SPEED;
     }
     if (maxScreenX >= canvas.clientWidth) {
@@ -121,8 +136,10 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     }
   };
 
-  // 가이드 원의 상태 및 가시성 실시간 업데이트
+  // 가이드 원 실시간 업데이트
   const updateGuideCircleState = () => {
+    if (pulseAnimation.isCharging) return;
+
     const { camera } = cameraStore.state;
     const worldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
     const hoveredIndex = getHoveredCircleIndex(worldPosition.x, worldPosition.y);
@@ -132,21 +149,65 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     const isOverCircle = hoveredIndex !== -1;
     const shouldShowGuide = !isCameraDragging && !isCircleDragging && !isRightClickDragging && !isOverCircle;
 
-    if (!pulseAnimation.isCharging) {
-      if (!shouldShowGuide) {
-        guideCircleStore.hide();
-        return;
-      }
-
-      guideCircleStore.set({
-        x: worldPosition.x,
-        y: worldPosition.y,
-        radius: CIRCLE_RADIUS * pulseAnimation.currentCount,
-        color: GUIDE_CIRCLE_COLOR,
-      });
+    if (!shouldShowGuide) {
+      guideCircleStore.hide();
+      return;
     }
 
+    const value = CIRCLE_VALUE + VALUE_RATIO * (pulseAnimation.currentCount - 1);
+    const baseRadius = CIRCLE_RADIUS * Math.sqrt(value / RADIUS_RATIO);
+    const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
+
+    guideCircleStore.set({
+      x: worldPosition.x,
+      y: worldPosition.y,
+      value,
+      radius: clampedRadius,
+      color: GUIDE_CIRCLE_COLOR,
+    });
+
     guideCircleStore.show();
+  };
+
+  // 마우스 이동 궤적 저장
+  const updateBrushAnimation = () => {
+    if (!isRightClickDragging) return;
+
+    const { camera } = cameraStore.state;
+    const worldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
+
+    // 현재 프레임의 위치를 배열 끝에 추가
+    brushPoints.push({ x: worldPosition.x, y: worldPosition.y });
+
+    if (brushPoints.length > MAX_BRUSH_LENGTH) {
+      brushPoints.shift();
+    }
+
+    brushStore.update([...brushPoints]);
+
+    brushAnimationId = requestAnimationFrame(updateBrushAnimation);
+  };
+
+  // 브러시 시작 및 처음 좌표 등록
+  const startBrushAnimation = () => {
+    if (brushAnimationId === null) {
+      const { camera } = cameraStore.state;
+      const worldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
+
+      brushPoints.length = 0;
+      brushPoints.push({ x: worldPosition.x, y: worldPosition.y });
+
+      brushAnimationId = requestAnimationFrame(updateBrushAnimation);
+    }
+  };
+
+  // 브러시 종료
+  const stopBrushAnimation = () => {
+    if (brushAnimationId !== null) {
+      cancelAnimationFrame(brushAnimationId);
+      brushAnimationId = null;
+    }
+    brushStore.hide();
   };
 
   // 키보드 입력에 따라 액션 제어
@@ -210,7 +271,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
         return;
       }
 
-      // Ctrl +좌클릭 시 선택된 원에 추가 및 삭제
+      // Ctrl+좌클릭 시 선택된 원에 추가 및 삭제
       if (e.ctrlKey) {
         if (!selectedIndices.includes(hoveredIndex)) {
           selectionStore.addSelect(hoveredIndex);
@@ -241,6 +302,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
       isRightClickDragging = true;
       selectionStore.addSelect(hoveredIndex);
+      startBrushAnimation();
       return;
     }
   };
@@ -319,6 +381,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
     if (isRightClickDragging) {
       isRightClickDragging = false;
+      stopBrushAnimation();
       updateGuideCircleState();
       return;
     }
@@ -331,17 +394,22 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       const { camera } = cameraStore.state;
       const worldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
 
+      const value = CIRCLE_VALUE + VALUE_RATIO * (finalCount - 1);
+      const baseRadius = CIRCLE_RADIUS * Math.sqrt(value / RADIUS_RATIO);
+      const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
+
       circleStore.addCircle({
         x: worldPosition.x,
         y: worldPosition.y,
-        radius: CIRCLE_RADIUS * finalCount,
+        value,
+        radius: clampedRadius,
         color: CIRCLE_COLOR,
       });
 
       const newCircleIndex = circleStore.getCircles().length - 1;
       selectionStore.setSelect(newCircleIndex);
 
-      guideCircleStore.setRadius(CIRCLE_RADIUS);
+      guideCircleStore.setValue(CIRCLE_VALUE);
       updateGuideCircleState();
     }
   };
@@ -354,6 +422,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       stopAutoCameraPanning();
     }
     isRightClickDragging = false;
+    stopBrushAnimation();
   };
 
   const onWheel = (e: WheelEvent) => {
@@ -362,7 +431,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     currentMousePosition.y = e.clientY;
 
     if (e.ctrlKey) {
-      const zoomIntensity = 0.002;
+      const zoomIntensity = 0.01;
       const zoomFactor = Math.exp(e.deltaY * -zoomIntensity);
       cameraStore.zoom(zoomFactor, e.clientX, e.clientY);
     } else {
@@ -373,8 +442,8 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   };
 
   // 우클릭 기본 이벤트 호출 방지
-  const onContextMenu = (event: MouseEvent) => {
-    event.preventDefault();
+  const onContextMenu = (e: MouseEvent) => {
+    e.preventDefault();
   };
 
   window.addEventListener('keyup', onKeyUp);
@@ -384,7 +453,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   window.addEventListener('pointerup', onPointerUp);
   canvas.addEventListener('pointerleave', onPointerLeave);
   canvas.addEventListener('wheel', onWheel, { passive: false });
-  canvas.addEventListener('contextmenu', onContextMenu);
+  window.addEventListener('contextmenu', onContextMenu);
 
   cleanupTasks.push(() => {
     pulseAnimation.cancel();
@@ -395,6 +464,6 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     window.removeEventListener('pointerup', onPointerUp);
     canvas.removeEventListener('pointerleave', onPointerLeave);
     canvas.removeEventListener('wheel', onWheel);
-    canvas.removeEventListener('contextmenu', onContextMenu);
+    window.removeEventListener('contextmenu', onContextMenu);
   });
 };
