@@ -1,4 +1,12 @@
-import { CIRCLE_COLOR, CIRCLE_RADIUS, GUIDE_CIRCLE_COLOR } from '../constants/index.ts';
+import {
+  CIRCLE_COLOR,
+  CIRCLE_RADIUS,
+  CIRCLE_VALUE,
+  GUIDE_CIRCLE_COLOR,
+  MAX_RADIUS,
+  RADIUS_RATIO,
+  VALUE_RATIO,
+} from '../constants/index.ts';
 import { screenToWorld } from '../core/index.ts';
 import { brushStore, cameraStore, circleStore, guideCircleStore, selectionStore } from '../store/index.ts';
 
@@ -22,17 +30,20 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
   // 원 생성 시 펄스 애니메이션 초기화
   const pulseAnimation = createPulseAnimation(
-    currentCount => {
-      guideCircleStore.setRadius(CIRCLE_RADIUS * currentCount);
-    },
+    () => {},
     (pulseSize, currentCount) => {
       const { camera } = cameraStore.state;
       const worldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
 
+      const value = CIRCLE_VALUE + VALUE_RATIO * (currentCount - 1);
+      const baseRadius = CIRCLE_RADIUS * Math.sqrt(value / RADIUS_RATIO);
+      const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
+
       guideCircleStore.set({
         x: worldPosition.x,
         y: worldPosition.y,
-        radius: CIRCLE_RADIUS * currentCount + pulseSize,
+        value,
+        radius: clampedRadius + pulseSize,
         color: GUIDE_CIRCLE_COLOR,
       });
     }
@@ -127,6 +138,8 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
   // 가이드 원 실시간 업데이트
   const updateGuideCircleState = () => {
+    if (pulseAnimation.isCharging) return;
+
     const { camera } = cameraStore.state;
     const worldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
     const hoveredIndex = getHoveredCircleIndex(worldPosition.x, worldPosition.y);
@@ -136,19 +149,22 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     const isOverCircle = hoveredIndex !== -1;
     const shouldShowGuide = !isCameraDragging && !isCircleDragging && !isRightClickDragging && !isOverCircle;
 
-    if (!pulseAnimation.isCharging) {
-      if (!shouldShowGuide) {
-        guideCircleStore.hide();
-        return;
-      }
-
-      guideCircleStore.set({
-        x: worldPosition.x,
-        y: worldPosition.y,
-        radius: CIRCLE_RADIUS * pulseAnimation.currentCount,
-        color: GUIDE_CIRCLE_COLOR,
-      });
+    if (!shouldShowGuide) {
+      guideCircleStore.hide();
+      return;
     }
+
+    const value = CIRCLE_VALUE + VALUE_RATIO * (pulseAnimation.currentCount - 1);
+    const baseRadius = CIRCLE_RADIUS * Math.sqrt(value / RADIUS_RATIO);
+    const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
+
+    guideCircleStore.set({
+      x: worldPosition.x,
+      y: worldPosition.y,
+      value,
+      radius: clampedRadius,
+      color: GUIDE_CIRCLE_COLOR,
+    });
 
     guideCircleStore.show();
   };
@@ -378,17 +394,22 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       const { camera } = cameraStore.state;
       const worldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
 
+      const value = CIRCLE_VALUE + VALUE_RATIO * (finalCount - 1);
+      const baseRadius = CIRCLE_RADIUS * Math.sqrt(value / RADIUS_RATIO);
+      const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
+
       circleStore.addCircle({
         x: worldPosition.x,
         y: worldPosition.y,
-        radius: CIRCLE_RADIUS * finalCount,
+        value,
+        radius: clampedRadius,
         color: CIRCLE_COLOR,
       });
 
       const newCircleIndex = circleStore.getCircles().length - 1;
       selectionStore.setSelect(newCircleIndex);
 
-      guideCircleStore.setRadius(CIRCLE_RADIUS);
+      guideCircleStore.setValue(CIRCLE_VALUE);
       updateGuideCircleState();
     }
   };
@@ -421,8 +442,8 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   };
 
   // 우클릭 기본 이벤트 호출 방지
-  const onContextMenu = (event: MouseEvent) => {
-    event.preventDefault();
+  const onContextMenu = (e: MouseEvent) => {
+    e.preventDefault();
   };
 
   window.addEventListener('keyup', onKeyUp);
