@@ -1,6 +1,7 @@
-import { ChartItem } from './ChartItem.tsx';
 import { state, subscribe } from '../../store/chartListStore.ts';
 import { createRef } from '../../utils/index.ts';
+
+import { ChartItem } from './ChartItem.tsx';
 
 export const ChartList = () => {
   const listRef = createRef<HTMLDivElement>(null);
@@ -9,7 +10,7 @@ export const ChartList = () => {
     return (
       <>
         {state.charts.map(chart => (
-          <ChartItem id={chart.id} label={chart.label} />
+          <ChartItem id={chart.id} label={chart.name} />
         ))}
       </>
     );

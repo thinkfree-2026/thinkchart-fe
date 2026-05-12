@@ -1,4 +1,8 @@
 export type ChartListItem = {
   id: string;
-  label: string;
+  name: string;
+  circleIds: string[];
+  createdAt: number;
+  xaxis: string;
+  yaxis: string;
 };
