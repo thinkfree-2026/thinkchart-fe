@@ -45,6 +45,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
         value,
         radius: clampedRadius + pulseSize,
         color: GUIDE_CIRCLE_COLOR,
+        opacity: 1,
       });
     }
   );
@@ -69,11 +70,11 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     let maxScreenY = -Infinity;
 
     selectedIndices.forEach(selectedIndex => {
-      const targetCircle = circles[selectedIndex];
+      const selectedCircle = circles[selectedIndex];
       // 월드 좌표 기반의 원 위치를 현재 카메라 배율이 반영된 화면 픽셀 좌표로 변환
-      const screenX = targetCircle.x * camera.scale + camera.x;
-      const screenY = targetCircle.y * camera.scale + camera.y;
-      const screenRadius = targetCircle.radius * camera.scale;
+      const screenX = selectedCircle.x * camera.scale + camera.x;
+      const screenY = selectedCircle.y * camera.scale + camera.y;
+      const screenRadius = selectedCircle.radius * camera.scale;
 
       minScreenX = Math.min(minScreenX, screenX - screenRadius);
       maxScreenX = Math.max(maxScreenX, screenX + screenRadius);
@@ -106,11 +107,11 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
       // 다중 원 이동
       selectedIndices.forEach(selectedIndex => {
-        const targetCircle = circles[selectedIndex];
+        const selectedCircle = circles[selectedIndex];
         circleStore.updateCirclePosition(
           selectedIndex,
-          targetCircle.x - panSpeedX / camera.scale,
-          targetCircle.y - panSpeedY / camera.scale
+          selectedCircle.x - panSpeedX / camera.scale,
+          selectedCircle.y - panSpeedY / camera.scale
         );
       });
 
@@ -164,6 +165,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       value,
       radius: clampedRadius,
       color: GUIDE_CIRCLE_COLOR,
+      opacity: 1,
     });
 
     guideCircleStore.show();
@@ -245,6 +247,8 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   const onPointerDown = (e: PointerEvent) => {
     currentMousePosition.x = e.clientX;
     currentMousePosition.y = e.clientY;
+
+    canvas.setPointerCapture(e.pointerId);
 
     if (e.button === 1 || (e.button === 0 && isSpacePressed)) {
       isCameraDragging = true;
@@ -334,8 +338,8 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
         // 선택된 모든 원 좌표 갱신
         selectedIndices.forEach(index => {
-          const targetCircle = circles[index];
-          circleStore.updateCirclePosition(index, targetCircle.x + deltaWorldX, targetCircle.y + deltaWorldY);
+          const selectedCircle = circles[index];
+          circleStore.updateCirclePosition(index, selectedCircle.x + deltaWorldX, selectedCircle.y + deltaWorldY);
         });
       }
     }
@@ -351,6 +355,10 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
   // 클릭 해제 시 모든 드래그 상태 & 원 생성
   const onPointerUp = (e: PointerEvent) => {
+    if (canvas.hasPointerCapture(e.pointerId)) {
+      canvas.releasePointerCapture(e.pointerId);
+    }
+
     if (isCameraDragging) {
       isCameraDragging = false;
       canvas.style.cursor = isSpacePressed ? 'grabbing' : 'default';
@@ -404,6 +412,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
         value,
         radius: clampedRadius,
         color: CIRCLE_COLOR,
+        opacity: 1,
       });
 
       const newCircleIndex = circleStore.getCircles().length - 1;

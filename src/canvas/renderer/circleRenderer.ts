@@ -13,13 +13,14 @@ export const drawCircle = (
   // 원 생성
   ctx.beginPath();
   ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
-  ctx.fillStyle = circle.color;
+  // ctx.fillStyle = circle.color;
+  ctx.fillStyle = isGuide ? circle.color : `rgba(190, 210, 254, ${circle.opacity})`;
   ctx.fill();
 
   // 원 내부 텍스트
   const fontSize = Math.max(14, circle.value / 2);
   ctx.font = `bold ${fontSize}px "Noto Sans", sans-serif`;
-  ctx.fillStyle = '#000000';
+  ctx.fillStyle = '#191c1f';
   ctx.textAlign = 'center'; // Horizontal center
   ctx.textBaseline = 'middle';
   ctx.fillText(String(circle.value), circle.x, circle.y);
