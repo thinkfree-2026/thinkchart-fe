@@ -2,9 +2,9 @@ import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from '
 
 export type ApiResponse<T> = {
   success: boolean;
-  code: number;
+  code: string;
   message: string;
-  result: T;
+  data: T;
 };
 
 export const httpClient: AxiosInstance = axios.create({
@@ -33,7 +33,7 @@ export const api = {
   },
 
   post: async <T, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<ApiResponse<T>> => {
-    const response = await httpClient.post<ApiResponse<T>>(url, data, config);
+    const response = await httpClient.post<ApiResponse<T>>(url, JSON.stringify(data), config);
     return response.data;
   },
 
@@ -43,7 +43,7 @@ export const api = {
   },
 
   patch: async <T, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<ApiResponse<T>> => {
-    const response = await httpClient.patch<ApiResponse<T>>(url, data, config);
+    const response = await httpClient.patch<ApiResponse<T>>(url, JSON.stringify(data), config);
     return response.data;
   },
 
