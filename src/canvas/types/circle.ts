@@ -4,6 +4,7 @@ export type Circle = {
   value: number; // 원의 값
   radius: number; // 원의 반지름
   color: string; // 원의 색상
+  opacity: number; // 원의 투명도
 };
 
 // 가이드 UI의 상태 타입 정의

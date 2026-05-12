@@ -38,6 +38,24 @@ const CircleStore = () => {
         state.version += 1;
       }
     },
+    setValue(index: number, value: number) {
+      if (index >= 0 && index < state.circles.length) {
+        state.circles[index] = {
+          ...state.circles[index],
+          value,
+        };
+        state.version += 1;
+      }
+    },
+    setOpacity(index: number, opacity: number) {
+      if (index >= 0 && index < state.circles.length) {
+        state.circles[index] = {
+          ...state.circles[index],
+          opacity,
+        };
+        state.version += 1;
+      }
+    },
   };
 };
 
