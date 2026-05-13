@@ -1,2 +1,2 @@
-export * from './chartList.ts';
+export * from './api/index.ts';
 export * from './dom.ts';
