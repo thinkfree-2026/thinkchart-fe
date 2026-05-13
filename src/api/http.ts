@@ -38,7 +38,7 @@ export const api = {
   },
 
   put: async <T, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<ApiResponse<T>> => {
-    const response = await httpClient.put<ApiResponse<T>>(url, data, config);
+    const response = await httpClient.put<ApiResponse<T>>(url, JSON.stringify(data), config);
     return response.data;
   },
 
