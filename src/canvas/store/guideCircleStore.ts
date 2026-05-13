@@ -1,4 +1,5 @@
 import { createStore } from '../../utils/index.ts';
+import { RADIUS_RATIO } from '../constants/index.ts';
 import type { Circle, GuideCircle } from '../types/index.ts';
 
 const createGuideCircleStore = () => {
@@ -39,13 +40,24 @@ const createGuideCircleStore = () => {
         isVisible,
       };
     },
-    setRadius: (radius: number) => {
+    // setRadius: (radius: number) => {
+    //   if (!state.guideCircle.circle) return;
+    //   state.guideCircle = {
+    //     ...state.guideCircle,
+    //     circle: {
+    //       ...state.guideCircle.circle,
+    //       radius,
+    //     },
+    //   };
+    // },
+    setValue: (value: number) => {
       if (!state.guideCircle.circle) return;
       state.guideCircle = {
         ...state.guideCircle,
         circle: {
           ...state.guideCircle.circle,
-          radius,
+          value,
+          radius: value / RADIUS_RATIO,
         },
       };
     },

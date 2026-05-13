@@ -1,6 +1,7 @@
 export type Circle = {
   x: number; // 원의 월드 X 좌표
   y: number; // 원의 월드 Y 좌표
+  value: number; // 원의 값
   radius: number; // 원의 반지름
   color: string; // 원의 색상
 };
