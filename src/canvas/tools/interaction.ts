@@ -43,7 +43,6 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
 
       guideCircleStore.set({
-        id: '',
         x: worldPosition.x,
         y: worldPosition.y,
         value,
@@ -163,7 +162,6 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
 
     guideCircleStore.set({
-      id: '',
       x: worldPosition.x,
       y: worldPosition.y,
       value,
@@ -435,6 +433,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
       circleStore.addCircle({
         id: '',
+        chartId: null,
         x: worldPosition.x,
         y: worldPosition.y,
         value,

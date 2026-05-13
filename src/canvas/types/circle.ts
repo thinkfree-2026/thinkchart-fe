@@ -11,6 +11,7 @@ export type Circle = {
 
 // 가이드 UI의 상태 타입 정의
 export type GuideCircle = {
-  circle: Circle | null;
+  circle: Omit<Circle, 'id' | 'chartId' | 'opacity'> | null;
+  // circle: Circle | null;
   isVisible: boolean; // 가이드 원의 화면 표시 여부
 };
