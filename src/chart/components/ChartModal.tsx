@@ -3,20 +3,18 @@ import { Input, Modal, Popover } from '../../components/index.ts';
 import { chartSocket } from '../../sockets/index.ts';
 import { createRef } from '../../utils/index.ts';
 import { BarChart } from '../BarChart.tsx';
-import { chartDataStore } from '../store/index.ts';
+import { chartDataStore, chartStore } from '../store/index.ts';
 import type { PopoverInfo } from '../types/index.ts';
 
 import { ChartOptionPanel } from './ChartOptionPanel.tsx';
 
 type ChartModalProps = {
   chartId: string;
-  chartName: string;
 };
 
-export const ChartModal = ({ chartId, chartName }: ChartModalProps) => {
+export const ChartModal = ({ chartId }: ChartModalProps) => {
   const { state: chartDataState } = chartDataStore;
-
-  const titleValueRef = createRef<string>(chartName);
+  const { state: chartState } = chartStore;
 
   const chartContainerRef = createRef<HTMLDivElement>(null);
   const chartTitleRef = createRef<HTMLDivElement>(null);
@@ -168,12 +166,12 @@ export const ChartModal = ({ chartId, chartName }: ChartModalProps) => {
 
   const closeTitleInput = async () => {
     await api.patch(`/canvas/charts/${chartId}`, {
-      name: titleValueRef.current,
+      name: chartState.name,
     });
 
     chartTitleRef.current?.replaceChildren(
-      <div class="text-title" onclick={handleChangeTitleClick}>
-        {titleValueRef.current}
+      <div id={`${chartId}-chart-title-display`} class="text-title" onclick={handleChangeTitleClick}>
+        {chartState.name}
       </div>
     );
 
@@ -198,12 +196,13 @@ export const ChartModal = ({ chartId, chartName }: ChartModalProps) => {
     chartTitleRef.current?.replaceChildren(
       <div ref={inputWrapperRef}>
         <Input
+          id={`${chartId}-chart-title-input`}
           style="h-12"
-          value={titleValueRef.current ?? ''}
+          value={chartState.name ?? ''}
           onInput={(e: Event) => {
             const target = e.target as HTMLInputElement;
 
-            titleValueRef.current = target.value;
+            chartState.name = target.value;
           }}
         />
       </div>
@@ -230,8 +229,8 @@ export const ChartModal = ({ chartId, chartName }: ChartModalProps) => {
       >
         <div class="flex min-w-0 flex-1 flex-col p-10">
           <div ref={chartTitleRef}>
-            <div class="text-title" onclick={handleChangeTitleClick}>
-              {titleValueRef.current}
+            <div id={`${chartId}-chart-title-display`} class="text-title" onclick={handleChangeTitleClick}>
+              {chartState.name}
             </div>
           </div>
           <div ref={chartContainerRef} class="relative mt-4 h-full min-w-0 overflow-hidden">

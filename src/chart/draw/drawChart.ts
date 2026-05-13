@@ -1,5 +1,5 @@
 import { CHART_COLORS, CHART_SIZES } from '../constants/constants.ts';
-import { axisStore, dataSettingsStore } from '../store/index.ts';
+import { chartStore, dataSettingsStore } from '../store/index.ts';
 import type { ChartData } from '../types/types.ts';
 import { getBarHeight, getBarTopY, getBarX, isExcessive } from '../utils/index.ts';
 
@@ -37,7 +37,7 @@ export const drawChart = ({ ctx, width, height, data, max }: DrawChartProps) => 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, width, height);
 
-  const { state: axis } = axisStore;
+  const { state: axis } = chartStore;
   const { state: dataOptions } = dataSettingsStore;
 
   const xAxisTitle = axis.xAxisName.trim();

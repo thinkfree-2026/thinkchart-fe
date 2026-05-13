@@ -1,4 +1,4 @@
-import { axisStore, dataSettingsStore } from '../store/index.ts';
+import { chartStore, dataSettingsStore } from '../store/index.ts';
 
 type CreateSubscriptionsParams = {
   scrollContainer: HTMLElement | null;
@@ -10,7 +10,7 @@ export const createSubscriptions = ({ scrollContainer }: CreateSubscriptionsPara
     const unsubs: (() => void)[] = [];
 
     (['showXAxisName', 'xAxisName', 'showYAxisName', 'yAxisName'] as const).forEach(key => {
-      unsubs.push(axisStore.subscribe(key, redraw));
+      unsubs.push(chartStore.subscribe(key, redraw));
     });
 
     return () => unsubs.forEach(u => u());
