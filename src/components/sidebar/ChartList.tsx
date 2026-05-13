@@ -1,6 +1,7 @@
-import { ChartItem } from './ChartItem.tsx';
 import { state, subscribe } from '../../store/chartListStore.ts';
 import { createRef } from '../../utils/index.ts';
+
+import { ChartItem } from './ChartItem.tsx';
 
 export const ChartList = () => {
   const listRef = createRef<HTMLDivElement>(null);

@@ -1,3 +1,5 @@
+import { canvasSocket } from '../../sockets/index.ts';
+import { throttle } from '../../utils/index.ts';
 import {
   CIRCLE_COLOR,
   CIRCLE_RADIUS,
@@ -8,7 +10,7 @@ import {
   VALUE_RATIO,
 } from '../constants/index.ts';
 import { screenToWorld } from '../core/index.ts';
-import { brushStore, cameraStore, circleStore, guideCircleStore, selectionStore } from '../store/index.ts';
+import { brushStore, cameraStore, circleStore, cursorStore, guideCircleStore, selectionStore } from '../store/index.ts';
 
 import { getHoveredCircleIndex } from './collision.ts';
 import { createPulseAnimation } from './pulseAnimation.ts';
@@ -40,6 +42,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
 
       guideCircleStore.set({
+        id: '',
         x: worldPosition.x,
         y: worldPosition.y,
         value,
@@ -159,6 +162,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
 
     guideCircleStore.set({
+      id: '',
       x: worldPosition.x,
       y: worldPosition.y,
       value,
@@ -212,9 +216,9 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
   // 키보드 입력에 따라 액션 제어
   const onKeyDown = (e: KeyboardEvent) => {
-    if (e.code === 'Space') {
+    if (e.code === 'Space' && !isSpacePressed) {
       isSpacePressed = true;
-      canvas.style.cursor = 'grabbing';
+      canvas.style.cursor = 'grab';
     }
 
     // 백스페이스 키 입력 시 선택된 원 삭제
@@ -223,10 +227,6 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
       if (selectedIndices.length > 0) {
         e.preventDefault();
-
-        // 삭제 시 인덱스 밀림 방지를 위한 내림차순 정렬
-        const sortedIndices = [...selectedIndices].sort((a, b) => b - a);
-        sortedIndices.forEach(index => circleStore.deleteCircle(index));
 
         selectionStore.setUnselect();
         updateGuideCircleState();
@@ -237,7 +237,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   const onKeyUp = (e: KeyboardEvent) => {
     if (e.code === 'Space') {
       isSpacePressed = false;
-      canvas.style.cursor = 'default';
+      canvas.style.cursor = "url('/cursor-black.png'), auto";
     }
   };
 
@@ -248,7 +248,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
     if (e.button === 1 || (e.button === 0 && isSpacePressed)) {
       isCameraDragging = true;
-      canvas.style.cursor = 'default';
+      canvas.style.cursor = 'grabbing';
       updateGuideCircleState();
       return;
     }
@@ -307,6 +307,16 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     }
   };
 
+  const updateCursor = throttle(
+    (x: number, y: number) =>
+      canvasSocket.sendCursorPosition({
+        id: `cursor-${Math.random().toString(36).slice(2, 9)}`,
+        x,
+        y,
+        color: '#000000',
+      }),
+    10
+  );
   // 마우스 이동 시 카메라 & 원 위치 이동
   const onPointerMove = (e: PointerEvent) => {
     const { camera } = cameraStore.state;
@@ -318,6 +328,15 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
     currentMousePosition.x = e.clientX;
     currentMousePosition.y = e.clientY;
+
+    updateCursor(currentWorldPosition.x, currentWorldPosition.y);
+
+    cursorStore.setCursor({
+      id: '1',
+      x: currentWorldPosition.x,
+      y: currentWorldPosition.y,
+      color: '#000000',
+    });
 
     if (isCameraDragging) {
       cameraStore.pan(e.movementX, e.movementY);
@@ -353,7 +372,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   const onPointerUp = (e: PointerEvent) => {
     if (isCameraDragging) {
       isCameraDragging = false;
-      canvas.style.cursor = isSpacePressed ? 'grabbing' : 'default';
+      canvas.style.cursor = isSpacePressed ? 'grab' : "url('/cursor-black.png'), auto";
       stopAutoCameraPanning();
       updateGuideCircleState();
       return;
@@ -399,6 +418,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
 
       circleStore.addCircle({
+        id: '',
         x: worldPosition.x,
         y: worldPosition.y,
         value,
