@@ -1,4 +1,4 @@
-import { cursorStore } from '../canvas/store/index.ts';
+import { cursorStore, userStore } from '../canvas/store/index.ts';
 
 import type { CursorResponse } from './socketTypes.ts';
 
@@ -10,7 +10,9 @@ export type CursorSocketMessage = {
 export const handleCursorSocketMessage = (message: CursorSocketMessage) => {
   switch (message.action) {
     case 'CURSOR_MOVE': {
-      cursorStore.setCursor(message.payload);
+      const { userId } = userStore.state;
+
+      if (userId !== message.payload.id) cursorStore.setCursor(message.payload);
       break;
     }
   }

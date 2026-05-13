@@ -1,4 +1,12 @@
-import { brushStore, cameraStore, circleStore, cursorStore, guideCircleStore, selectionStore } from '../store/index.ts';
+import {
+  brushStore,
+  cameraStore,
+  circleStore,
+  cursorStore,
+  guideCircleStore,
+  selectionStore,
+  userStore,
+} from '../store/index.ts';
 
 import { drawBrush } from './brushRenderer.ts';
 import { drawCircle } from './circleRenderer.ts';
@@ -90,8 +98,9 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     }
 
     // 커서
-    const cursor = cursorStore.state.cursor;
-    if (cursor) {
+    const { userId } = userStore.state;
+    const { cursor } = cursorStore.state;
+    if (cursor && cursor.id !== userId) {
       // console.log(cursor);
       drawCursor(ctx, cursor);
     }
