@@ -1,10 +1,10 @@
-import { state } from '../../store/chartListStore.ts';
-import { modalRoot } from '../../main.ts';
 import { api, type ApiResponse } from '../../api/http.ts';
-import type { Chart } from '../../types/api/chartAPI.ts';
+import { ChartModal } from '../../chart/components/index.ts';
+import { axisStore } from '../../chart/store/index.ts';
 import { chartDataStore } from '../../chart/store/chartDataStore.ts';
-import { axisStore } from '../../chart/store';
-import { ChartModal } from '../../chart/components';
+import { modalRoot } from '../../main.ts';
+import { state } from '../../store/chartListStore.ts';
+import type { Chart } from '../../types/api/chartAPI.ts';
 
 type ChartItemProps = {
   id: string;
