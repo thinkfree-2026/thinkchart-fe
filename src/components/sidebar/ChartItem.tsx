@@ -3,7 +3,7 @@ import { ChartModal } from '../../chart/components/index.ts';
 import { chartDataStore } from '../../chart/store/chartDataStore.ts';
 import { axisStore } from '../../chart/store/index.ts';
 import { modalRoot } from '../../main.ts';
-import { state } from '../../store/chartListStore.ts';
+import { chartListState } from '../../store/chartListStore.ts';
 import type { Chart } from '../../types/api/chartAPI.ts';
 
 type ChartItemProps = {
@@ -13,8 +13,8 @@ type ChartItemProps = {
 
 export const ChartItem = ({ id, label }: ChartItemProps) => {
   const handleClick = async () => {
-    if (state.activeId === id) return;
-    state.activeId = id;
+    if (chartListState.activeId === id) return;
+    chartListState.activeId = id;
 
     const res: ApiResponse<Chart> = await api.get(`/canvas/charts/${id}`);
 
@@ -36,10 +36,10 @@ export const ChartItem = ({ id, label }: ChartItemProps) => {
   const handleDeleteClick = async (e: MouseEvent) => {
     e.stopPropagation();
 
-    state.charts = state.charts.filter(chart => chart.id !== id);
+    chartListState.charts = chartListState.charts.filter(chart => chart.id !== id);
 
-    if (state.activeId === id) {
-      state.activeId = null;
+    if (chartListState.activeId === id) {
+      chartListState.activeId = null;
     }
 
     await api.delete(`/canvas/charts/${id}`);
@@ -49,7 +49,7 @@ export const ChartItem = ({ id, label }: ChartItemProps) => {
     <div
       onclick={handleClick}
       class={`group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-caption transition ${
-        state.activeId === id ? 'bg-primary/10 font-semibold text-primary' : 'text-gray-500 hover:bg-gray-100'
+        chartListState.activeId === id ? 'bg-primary/10 font-semibold text-primary' : 'text-gray-500 hover:bg-gray-100'
       } `}
     >
       <span>{label}</span>

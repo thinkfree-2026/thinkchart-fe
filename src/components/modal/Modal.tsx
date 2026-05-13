@@ -1,21 +1,23 @@
+import { chartListState } from '../../store/index.ts';
 import type { ChildrenType } from '../../types/index.ts';
 import { createRef } from '../../utils/index.ts';
-import { state } from '../../store/index.ts';
 
 type ModalProps = {
   id: string;
   width?: string;
   height?: string;
   children?: ChildrenType;
+  onClose?: () => void;
 };
 
-export const Modal = ({ id, width = 'w-[1100px]', height = 'h-[720px]', children }: ModalProps) => {
+export const Modal = ({ id, width = 'w-[1100px]', height = 'h-[720px]', children, onClose }: ModalProps) => {
   const modalRef = createRef<HTMLDialogElement>(null);
 
   const closeModal = () => {
     modalRef.current?.close();
     modalRef.current?.remove();
-    state.activeId = null;
+    chartListState.activeId = null;
+    onClose?.();
   };
 
   const handleCloseButtonClick = () => {
@@ -23,6 +25,10 @@ export const Modal = ({ id, width = 'w-[1100px]', height = 'h-[720px]', children
   };
 
   const handleModalBackdropClick = (e: MouseEvent) => {
+    if (document.body.dataset.chartDragging === 'true') {
+      return;
+    }
+
     const modal = e.currentTarget as HTMLDialogElement;
 
     const rect = modal.getBoundingClientRect();
