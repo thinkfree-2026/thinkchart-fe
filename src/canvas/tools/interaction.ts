@@ -1,3 +1,4 @@
+import { api } from '../../api/http.ts';
 import { canvasSocket } from '../../sockets/index.ts';
 import { throttle } from '../../utils/index.ts';
 import {
@@ -228,6 +229,17 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       if (selectedIndices.length > 0) {
         e.preventDefault();
 
+        const circles = circleStore.getCircles();
+        const selectedIds = selectedIndices.map(selectedIndex => circles[selectedIndex].id);
+
+        api.delete(`/canvas/circles`, { params: { ids: selectedIds } }).catch(error => {
+          console.error(error);
+        });
+
+        selectedIds.forEach(selectedIds => {
+          circleStore.deleteCircle(selectedIds);
+        });
+
         selectionStore.setUnselect();
         updateGuideCircleState();
       }
@@ -416,6 +428,10 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       const value = CIRCLE_VALUE + VALUE_RATIO * (finalCount - 1);
       const baseRadius = CIRCLE_RADIUS * Math.sqrt(value / RADIUS_RATIO);
       const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
+
+      api.post('/canvas/circles', { x: worldPosition.x, y: worldPosition.y, value }).catch(error => {
+        console.error(error);
+      });
 
       circleStore.addCircle({
         id: '',

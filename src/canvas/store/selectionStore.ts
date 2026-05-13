@@ -12,26 +12,26 @@ const createSelectionStore = () => {
   return {
     state,
     subscribe,
-    setHover(index: number) {
+    setHover: (index: number) => {
       if (state.selection.hoveredIndex === index) return;
       state.selection = {
         ...state.selection,
         hoveredIndex: index,
       };
     },
-    setSelect(index: number) {
+    setSelect: (index: number) => {
       state.selection = {
         ...state.selection,
         selectedIndices: [index],
       };
     },
-    setUnselect() {
+    setUnselect: () => {
       state.selection = {
         ...state.selection,
         selectedIndices: [],
       };
     },
-    addSelect(index: number) {
+    addSelect: (index: number) => {
       if (index === -1) return;
 
       if (!state.selection.selectedIndices.includes(index)) {
@@ -41,7 +41,7 @@ const createSelectionStore = () => {
         };
       }
     },
-    deleteSelect(index: number) {
+    deleteSelect: (index: number) => {
       if (index === -1) return;
 
       if (state.selection.selectedIndices.includes(index)) {
