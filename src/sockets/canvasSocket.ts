@@ -1,8 +1,8 @@
-import type { Cursor } from './socketTypes.ts';
+import type { CursorResponse } from './socketTypes.ts';
 import { websocketClient } from './stompClient.ts';
 
 export const canvasSocket = {
-  sendCursorPosition: (cursor: Cursor) => {
+  sendCursorPosition: (cursor: CursorResponse) => {
     if (!websocketClient.connected) return;
 
     websocketClient.publish({

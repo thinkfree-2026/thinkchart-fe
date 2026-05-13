@@ -78,7 +78,7 @@ export const Canvas = () => {
     <div class="relative h-full w-full overflow-hidden">
       <canvas
         id="canvas"
-        class="block h-full w-full cursor-[url('/cursor-black.png'),_auto] touch-none bg-[#f0f0f0] bg-[radial-gradient(#333_1px,transparent_1px)] bg-[size:20px_20px]"
+        class="block h-full w-full cursor-[url('/cursor-black.png'),auto] touch-none bg-[#f0f0f0] bg-[radial-gradient(#333_1px,transparent_1px)] bg-size-[20px_20px]"
         oneffect={(canvasElement: HTMLCanvasElement) => {
           initializeCallback(canvasElement).catch(error => {
             console.error(error);

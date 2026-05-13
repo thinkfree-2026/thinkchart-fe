@@ -334,7 +334,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   const updateCursor = throttle(
     (x: number, y: number) =>
       canvasSocket.sendCursorPosition({
-        id: `cursor-${Math.random().toString(36).slice(2, 9)}`,
+        id: '',
         x,
         y,
         color: '#000000',
