@@ -10,6 +10,7 @@ export type ChartSocketMessage =
   | {
       action: 'CHART_DELETED';
       payload: {
+        circleIds: string[];
         id: string;
       };
     };
@@ -43,6 +44,9 @@ export const handleChartSocketMessage = (message: ChartSocketMessage) => {
     }
 
     case 'CHART_DELETED': {
+      const circleIds = message.payload.circleIds;
+      circleIds.forEach(circleId => circleStore.deleteCircle(circleId));
+
       chartListState.charts = chartListState.charts.filter(chart => chart.id !== message.payload.id);
 
       break;
