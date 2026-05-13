@@ -139,13 +139,27 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     }
   };
 
+  // 차트에 사용된 원 잠금
+  const getUnlockedCircleIndex = (worldX: number, worldY: number) => {
+    const index = getHoveredCircleIndex(worldX, worldY);
+
+    if (index !== -1) {
+      const circles = circleStore.getCircles();
+      if (circles[index].chartId !== null) {
+        return -1;
+      }
+    }
+
+    return index;
+  };
+
   // 가이드 원 실시간 업데이트
   const updateGuideCircleState = () => {
     if (pulseAnimation.isCharging) return;
 
     const { camera } = cameraStore.state;
     const worldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
-    const hoveredIndex = getHoveredCircleIndex(worldPosition.x, worldPosition.y);
+    const hoveredIndex = getUnlockedCircleIndex(worldPosition.x, worldPosition.y);
 
     selectionStore.setHover(hoveredIndex);
 
@@ -270,7 +284,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
       const { camera } = cameraStore.state;
       const worldPosition = screenToWorld(e.clientX, e.clientY, camera);
-      const hoveredIndex = getHoveredCircleIndex(worldPosition.x, worldPosition.y);
+      const hoveredIndex = getUnlockedCircleIndex(worldPosition.x, worldPosition.y);
 
       const { selectedIndices } = selectionStore.state.selection;
 
@@ -308,7 +322,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
       const { camera } = cameraStore.state;
       const worldPosition = screenToWorld(e.clientX, e.clientY, camera);
-      const hoveredIndex = getHoveredCircleIndex(worldPosition.x, worldPosition.y);
+      const hoveredIndex = getUnlockedCircleIndex(worldPosition.x, worldPosition.y);
 
       isRightClickDragging = true;
       selectionStore.addSelect(hoveredIndex);
@@ -371,7 +385,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
     if (isRightClickDragging) {
       // 우클릭 드래그 시 지나가는 원들을 연속으로 배열에 추가
-      const hoveredIndex = getHoveredCircleIndex(currentWorldPosition.x, currentWorldPosition.y);
+      const hoveredIndex = getUnlockedCircleIndex(currentWorldPosition.x, currentWorldPosition.y);
       selectionStore.addSelect(hoveredIndex);
     }
 
