@@ -1,3 +1,4 @@
+import { circleStore } from '../canvas/store/index.ts';
 import { chartListState } from '../store/index.ts';
 import type { ChartListItem } from '../types/index.ts';
 
@@ -16,8 +17,15 @@ export type ChartSocketMessage =
 export const handleChartSocketMessage = (message: ChartSocketMessage) => {
   switch (message.action) {
     case 'CHART_CREATED': {
-      chartListState.charts = [...chartListState.charts, message.payload];
+      const chartId = message.payload.id;
+      const usedCircleIds = message.payload.circleIds;
+      circleStore.getCircles().forEach(circle => {
+        if (usedCircleIds.includes(circle.id)) {
+          circle.chartId = chartId;
+        }
+      });
 
+      chartListState.charts = [...chartListState.charts, message.payload];
       break;
     }
 

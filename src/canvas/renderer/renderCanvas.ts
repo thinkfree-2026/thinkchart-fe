@@ -101,7 +101,6 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     const { userId } = userStore.state;
     const { cursor } = cursorStore.state;
     if (cursor && cursor.id !== userId) {
-      // console.log(cursor);
       drawCursor(ctx, cursor);
     }
   };

@@ -39,6 +39,11 @@ export const Canvas = () => {
     api.post('/canvas/charts', { circleIds: selectedIds }).catch(error => {
       console.error(error);
     });
+
+    if (!chartButtonRef.current) return;
+
+    selectionStore.setUnselect();
+    chartButtonRef.current.style.display = 'none';
   };
 
   const initializeCallback = async (canvasElement: HTMLCanvasElement) => {
