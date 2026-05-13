@@ -1,6 +1,10 @@
-import { state } from '../../store/chartListStore.ts';
-import { ChartModal } from '../modal/index.ts';
+import { api, type ApiResponse } from '../../api/http.ts';
+import { ChartModal } from '../../chart/components/index.ts';
+import { chartDataStore } from '../../chart/store/chartDataStore.ts';
+import { axisStore } from '../../chart/store/index.ts';
 import { modalRoot } from '../../main.ts';
+import { chartListState } from '../../store/chartListStore.ts';
+import type { Chart } from '../../types/api/chartAPI.ts';
 
 type ChartItemProps = {
   id: string;
@@ -8,27 +12,44 @@ type ChartItemProps = {
 };
 
 export const ChartItem = ({ id, label }: ChartItemProps) => {
-  const handleClick = () => {
-    if (state.activeId === id) return;
-    state.activeId = id;
-    modalRoot.replaceChildren(<ChartModal id={id} />);
+  const handleClick = async () => {
+    if (chartListState.activeId === id) return;
+    chartListState.activeId = id;
+
+    const res: ApiResponse<Chart> = await api.get(`/canvas/charts/${id}`);
+
+    const { state: chartDataState } = chartDataStore;
+    const { state: axisState } = axisStore;
+
+    const circles = res.data.circles;
+    chartDataState.data = circles.map(circle => ({
+      ...circle,
+      isActive: false,
+    }));
+
+    axisState.xAxisName = res.data.xaxis;
+    axisState.yAxisName = res.data.yaxis;
+
+    modalRoot.replaceChildren(<ChartModal chartId={id} chartName={label} />);
   };
 
-  const handleDeleteClick = (e: MouseEvent) => {
+  const handleDeleteClick = async (e: MouseEvent) => {
     e.stopPropagation();
 
-    state.charts = state.charts.filter(chart => chart.id !== id);
+    chartListState.charts = chartListState.charts.filter(chart => chart.id !== id);
 
-    if (state.activeId === id) {
-      state.activeId = null;
+    if (chartListState.activeId === id) {
+      chartListState.activeId = null;
     }
+
+    await api.delete(`/canvas/charts/${id}`);
   };
 
   return (
     <div
       onclick={handleClick}
       class={`group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-caption transition ${
-        state.activeId === id ? 'bg-primary/10 font-semibold text-primary' : 'text-gray-500 hover:bg-gray-100'
+        chartListState.activeId === id ? 'bg-primary/10 font-semibold text-primary' : 'text-gray-500 hover:bg-gray-100'
       } `}
     >
       <span>{label}</span>

@@ -1,13 +1,15 @@
-import { Input, Slider } from '../common/index.ts';
+import { Button, Input, Slider } from '../common/index.ts';
 
 type PopoverProps = {
   id?: string;
   label?: string;
   value?: number;
   opacity?: number;
+  onNameInput?: (value: string) => void;
   onValueInput?: (value: number) => void;
   onOpacityInput?: (value: number) => void;
   onDelete?: () => void;
+  onSave?: () => void;
 };
 
 export const Popover = ({
@@ -15,15 +17,25 @@ export const Popover = ({
   label,
   value,
   opacity = 100,
+  onNameInput,
   onValueInput,
   onOpacityInput,
   onDelete,
+  onSave,
 }: PopoverProps = {}) => {
   return (
     <div id={id} class="w-full rounded-3xl bg-white px-3 py-3 shadow-md">
-      <header class="flex items-center justify-between">
+      <header class="flex items-center justify-between gap-4">
         <div>
-          <div class="text-sm font-semibold">{label}</div>
+          <div class="text-sm font-semibold">
+            <Input
+              value={label}
+              onInput={e => {
+                const nextValue = (e.currentTarget as HTMLInputElement).value;
+                onNameInput?.(nextValue);
+              }}
+            />
+          </div>
         </div>
         <button type="button" onclick={onDelete} class="text-sm transition hover:opacity-70" aria-label="Delete">
           🗑
@@ -40,7 +52,10 @@ export const Popover = ({
           onValueInput?.(nextValue);
         }}
       />
-      <Slider id={`${id}-slider`} value={opacity} onInput={onOpacityInput} />
+      <Slider id={`${id}-slider`} value={opacity * 100} onInput={onOpacityInput} />
+      <div class="mt-3 h-6 text-xs">
+        <Button label="저장" onClick={onSave} />
+      </div>
     </div>
   );
 };
