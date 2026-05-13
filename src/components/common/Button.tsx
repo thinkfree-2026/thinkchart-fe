@@ -4,7 +4,7 @@ type ButtonProps = {
   label: string;
   type?: 'button' | 'submit';
   color?: ButtonColor;
-  onClick: (e: MouseEvent) => void;
+  onClick?: () => void;
 };
 
 const COLOR_CLASS: Record<ButtonColor, string> = {
