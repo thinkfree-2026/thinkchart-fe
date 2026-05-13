@@ -1,5 +1,6 @@
 import { api } from '../../api/http.ts';
 import { Input, Modal, Popover } from '../../components/index.ts';
+import { chartSocket } from '../../sockets/index.ts';
 import { createRef } from '../../utils/index.ts';
 import { BarChart } from '../BarChart.tsx';
 import { chartDataStore } from '../store/index.ts';
@@ -24,6 +25,51 @@ export const ChartModal = ({ chartId, chartName }: ChartModalProps) => {
   const popoverLayerRef = createRef<HTMLDivElement>(null);
   const chartControlsRef = createRef<{ redraw: () => void } | null>(null);
   const selectedBarRef = createRef<PopoverInfo | null>(null);
+
+  let isSocketConnected = false;
+
+  const startChartSocket = () => {
+    if (isSocketConnected) return;
+
+    isSocketConnected = true;
+
+    chartSocket.enterChartSession(chartId, message => {
+      switch (message.action) {
+        case 'CHART_BAR_UPDATED':
+          const updatedChartBar = message.payload;
+
+          const target = chartDataState.data.find(data => data.id === updatedChartBar.circleId);
+
+          if (!target) return;
+
+          target.name = updatedChartBar.name;
+          target.value = updatedChartBar.value;
+          target.opacity = updatedChartBar.opacity;
+
+          requestAnimationFrame(() => {
+            chartControlsRef.current?.redraw();
+          });
+          break;
+        case 'CHART_BAR_DELETED': {
+          const deleteChartBar = message.payload;
+
+          const targetIndex = chartDataState.data.findIndex(data => data.id === deleteChartBar);
+
+          if (targetIndex === -1) return;
+
+          chartDataState.data.splice(targetIndex, 1);
+
+          requestAnimationFrame(() => {
+            chartControlsRef.current?.redraw();
+          });
+
+          break;
+        }
+        default:
+          break;
+      }
+    });
+  };
 
   const getPopoverPosition = (barInfo: PopoverInfo) => {
     const layer = popoverLayerRef.current;
@@ -86,30 +132,27 @@ export const ChartModal = ({ chartId, chartName }: ChartModalProps) => {
             chartControlsRef.current?.redraw();
           }}
           onValueInput={(nextValue: number) => {
-            targetData.value = Math.max(0, Math.round(nextValue));
-
+            targetData.value = nextValue;
             chartControlsRef.current?.redraw();
           }}
           onOpacityInput={(nextOpacity: number) => {
-            targetData.opacity = Math.max(0, Math.min(100, Math.round(nextOpacity)));
-
+            targetData.opacity = nextOpacity;
             chartControlsRef.current?.redraw();
           }}
           onDelete={async () => {
-            targetData.value = 0;
-            targetData.opacity = 100;
-
+            const targetIndex = chartDataState.data.findIndex(data => data.id === targetData.id);
+            if (targetIndex !== -1) {
+              chartDataState.data.splice(targetIndex, 1);
+            }
             chartControlsRef.current?.redraw();
-
             renderPopover(null);
-
             await api.delete(`/canvas/charts/${targetData.chartId}/${targetData.id}`);
           }}
           onSave={async () => {
             await api.patch(`/canvas/charts/${targetData.chartId}/${targetData.id}`, {
               name: targetData.name,
               value: targetData.value,
-              opacity: targetData.opacity / 100,
+              opacity: targetData.opacity > 1 ? targetData.opacity / 100 : targetData.opacity,
             });
           }}
         />
@@ -166,8 +209,19 @@ export const ChartModal = ({ chartId, chartName }: ChartModalProps) => {
   };
 
   return (
-    <Modal id={chartId}>
-      <div class="flex h-full overflow-hidden">
+    <Modal
+      id={chartId}
+      onClose={() => {
+        chartSocket.leaveChartSession();
+        isSocketConnected = false;
+      }}
+    >
+      <div
+        class="flex h-full overflow-hidden"
+        oneffect={() => {
+          startChartSocket();
+        }}
+      >
         <div class="flex min-w-0 flex-1 flex-col p-10">
           <div ref={chartTitleRef}>
             <div class="text-title" onclick={handleChangeTitleClick}>
