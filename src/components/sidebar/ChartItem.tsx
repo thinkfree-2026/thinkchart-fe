@@ -1,7 +1,7 @@
 import { api, type ApiResponse } from '../../api/http.ts';
 import { ChartModal } from '../../chart/components/index.ts';
-import { axisStore } from '../../chart/store/index.ts';
 import { chartDataStore } from '../../chart/store/chartDataStore.ts';
+import { axisStore } from '../../chart/store/index.ts';
 import { modalRoot } from '../../main.ts';
 import { state } from '../../store/chartListStore.ts';
 import type { Chart } from '../../types/api/chartAPI.ts';
@@ -33,7 +33,7 @@ export const ChartItem = ({ id, label }: ChartItemProps) => {
     modalRoot.replaceChildren(<ChartModal chartId={id} chartName={label} />);
   };
 
-  const handleDeleteClick = (e: MouseEvent) => {
+  const handleDeleteClick = async (e: MouseEvent) => {
     e.stopPropagation();
 
     state.charts = state.charts.filter(chart => chart.id !== id);
@@ -41,6 +41,8 @@ export const ChartItem = ({ id, label }: ChartItemProps) => {
     if (state.activeId === id) {
       state.activeId = null;
     }
+
+    await api.delete(`/canvas/charts/${id}`);
   };
 
   return (
