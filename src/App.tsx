@@ -11,7 +11,7 @@ const getChartList = async () => {
 };
 
 export const App = () => {
-  getChartList();
+  void getChartList();
 
   return (
     <>

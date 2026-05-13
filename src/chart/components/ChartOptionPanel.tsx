@@ -13,11 +13,13 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
   const { state: dataSettingsState } = dataSettingsStore;
   const { state: axisState } = axisStore;
 
-  const onClickedChangeChart = async () => {
-    await api.patch(`/canvas/charts/${chartId}`, {
-      xAxis: axisState.xAxisName,
-      yAxis: axisState.yAxisName,
-    });
+  const onClickedChangeChart = () => {
+    void (async () => {
+      await api.patch(`/canvas/charts/${chartId}`, {
+        xAxis: axisState.xAxisName,
+        yAxis: axisState.yAxisName,
+      });
+    })();
   };
 
   return (

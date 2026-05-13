@@ -35,7 +35,7 @@ export const ChartModal = ({ chartId, chartName }: ChartModalProps) => {
 
     chartSocket.enterChartSession(chartId, message => {
       switch (message.action) {
-        case 'CHART_BAR_UPDATED':
+        case 'CHART_BAR_UPDATED': {
           const updatedChartBar = message.payload;
 
           const target = chartDataState.data.find(data => data.id === updatedChartBar.circleId);
@@ -50,6 +50,7 @@ export const ChartModal = ({ chartId, chartName }: ChartModalProps) => {
             chartControlsRef.current?.redraw();
           });
           break;
+        }
         case 'CHART_BAR_DELETED': {
           const deleteChartBar = message.payload;
 
@@ -139,21 +140,26 @@ export const ChartModal = ({ chartId, chartName }: ChartModalProps) => {
             targetData.opacity = nextOpacity;
             chartControlsRef.current?.redraw();
           }}
-          onDelete={async () => {
+          onDelete={() => {
             const targetIndex = chartDataState.data.findIndex(data => data.id === targetData.id);
             if (targetIndex !== -1) {
               chartDataState.data.splice(targetIndex, 1);
             }
             chartControlsRef.current?.redraw();
             renderPopover(null);
-            await api.delete(`/canvas/charts/${targetData.chartId}/${targetData.id}`);
+
+            void (async () => {
+              await api.delete(`/canvas/charts/${targetData.chartId}/${targetData.id}`);
+            })();
           }}
-          onSave={async () => {
-            await api.patch(`/canvas/charts/${targetData.chartId}/${targetData.id}`, {
-              name: targetData.name,
-              value: targetData.value,
-              opacity: targetData.opacity > 1 ? targetData.opacity / 100 : targetData.opacity,
-            });
+          onSave={() => {
+            void (async () => {
+              await api.patch(`/canvas/charts/${targetData.chartId}/${targetData.id}`, {
+                name: targetData.name,
+                value: targetData.value,
+                opacity: targetData.opacity > 1 ? targetData.opacity / 100 : targetData.opacity,
+              });
+            })();
           }}
         />
       </div>
@@ -184,7 +190,7 @@ export const ChartModal = ({ chartId, chartName }: ChartModalProps) => {
     const isOutside = !wrapper.contains(target);
 
     if (isOutside) {
-      closeTitleInput();
+      void closeTitleInput();
     }
   };
 
@@ -193,7 +199,7 @@ export const ChartModal = ({ chartId, chartName }: ChartModalProps) => {
       <div ref={inputWrapperRef}>
         <Input
           style="h-12"
-          value={titleValueRef.current || ''}
+          value={titleValueRef.current ?? ''}
           onInput={(e: Event) => {
             const target = e.target as HTMLInputElement;
 
