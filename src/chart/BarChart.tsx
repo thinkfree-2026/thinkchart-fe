@@ -1,4 +1,5 @@
 import { createRef } from '../utils/index.ts';
+
 import { CHART_SIZES } from './constants/constants.ts';
 import { setupChartEffect } from './core/setupChartEffect.ts';
 import type { BarChartProps } from './types/index.ts';

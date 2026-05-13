@@ -46,7 +46,7 @@ export const createChart = (
 
       if (result) {
         lastCalculatedChartHeight = result.chartHeight;
-        lastCalculatedSpacing = result.spacing;
+        lastCalculatedSpacing = result.gap;
         lastCalculatedOriginX = result.originX ?? 0;
       }
     });
@@ -98,7 +98,7 @@ export const createChart = (
         x: hitResult.barX + CHART_SIZES.BAR_WIDTH / 2,
         y: hitResult.barTopY,
         value: item.value,
-        label: item.label,
+        name: item.name,
         index: hitIndex,
         opacity: item.opacity ?? 100,
       });
@@ -158,7 +158,7 @@ export const createChart = (
         x: barX + CHART_SIZES.BAR_WIDTH / 2,
         y: barTopY,
         value: draggedItem.value,
-        label: draggedItem.label,
+        name: draggedItem.name,
         index: draggedBarIndex,
         opacity: draggedItem.opacity ?? 100,
       });
@@ -224,7 +224,7 @@ export const createChart = (
 
           if (result) {
             lastCalculatedChartHeight = result.chartHeight;
-            lastCalculatedSpacing = result.spacing;
+            lastCalculatedSpacing = result.gap;
             lastCalculatedOriginX = result.originX ?? 0;
           }
         });
