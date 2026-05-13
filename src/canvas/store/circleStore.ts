@@ -40,6 +40,14 @@ const CircleStore = () => {
         state.version += 1;
       }
     },
+    updateCircleUserId: (userId: string, id: string) => {
+      const index = state.circles.findIndex(circle => circle.userId === userId && circle.id === '');
+
+      if (index !== -1) {
+        state.circles[index].id = id;
+        state.version += 1;
+      }
+    },
   };
 };
 

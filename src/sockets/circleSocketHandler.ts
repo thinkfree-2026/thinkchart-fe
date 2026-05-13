@@ -16,11 +16,18 @@ export type CircleSocketMessage =
 export const handleCircleSocketMessage = (message: CircleSocketMessage) => {
   switch (message.action) {
     case 'CIRCLE_CREATED': {
-      const circle = message.payload;
-      circleStore.addCircle({
-        ...circle,
-        radius: CIRCLE_RADIUS * Math.sqrt(circle.value / CIRCLE_VALUE),
-      });
+      const isNewCircle = circleStore
+        .getCircles()
+        .some(circle => circle.userId === message.payload.userId && circle.id === '');
+
+      if (isNewCircle) {
+        circleStore.updateCircleUserId(message.payload.userId, message.payload.id);
+      } else {
+        circleStore.addCircle({
+          ...message.payload,
+          radius: CIRCLE_RADIUS * Math.sqrt(message.payload.value / CIRCLE_VALUE),
+        });
+      }
       break;
     }
     // case 'CIRCLE_UPDATED': {

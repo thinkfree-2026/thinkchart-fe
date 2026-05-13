@@ -11,7 +11,15 @@ import {
   VALUE_RATIO,
 } from '../constants/index.ts';
 import { screenToWorld } from '../core/index.ts';
-import { brushStore, cameraStore, circleStore, cursorStore, guideCircleStore, selectionStore } from '../store/index.ts';
+import {
+  brushStore,
+  cameraStore,
+  circleStore,
+  cursorStore,
+  guideCircleStore,
+  selectionStore,
+  userStore,
+} from '../store/index.ts';
 
 import { getHoveredCircleIndex } from './collision.ts';
 import { createPulseAnimation } from './pulseAnimation.ts';
@@ -332,9 +340,9 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   };
 
   const updateCursor = throttle(
-    (x: number, y: number) =>
+    (id: string, x: number, y: number) =>
       canvasSocket.sendCursorPosition({
-        id: '',
+        id,
         x,
         y,
         color: '#000000',
@@ -353,10 +361,11 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     currentMousePosition.x = e.clientX;
     currentMousePosition.y = e.clientY;
 
-    updateCursor(currentWorldPosition.x, currentWorldPosition.y);
+    const { userId } = userStore.state;
+    updateCursor(userId, currentWorldPosition.x, currentWorldPosition.y);
 
     cursorStore.setCursor({
-      id: '1',
+      id: userId,
       x: currentWorldPosition.x,
       y: currentWorldPosition.y,
       color: '#000000',
@@ -433,6 +442,8 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
     // 좌클릭
     if (e.button === 0) {
+      const { userId } = userStore.state;
+
       const finalCount = pulseAnimation.stop();
       const { camera } = cameraStore.state;
       const worldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
@@ -441,11 +452,12 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       const baseRadius = CIRCLE_RADIUS * Math.sqrt(value / RADIUS_RATIO);
       const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
 
-      api.post('/canvas/circles', { x: worldPosition.x, y: worldPosition.y, value }).catch(error => {
+      api.post('/canvas/circles', { userId, x: worldPosition.x, y: worldPosition.y, value }).catch(error => {
         console.error(error);
       });
 
       circleStore.addCircle({
+        userId,
         id: '',
         chartId: null,
         x: worldPosition.x,

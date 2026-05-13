@@ -1,4 +1,5 @@
 export type Circle = {
+  userId: string;
   id: string;
   chartId: string | null;
   x: number; // 원의 월드 X 좌표
@@ -11,7 +12,7 @@ export type Circle = {
 
 // 가이드 UI의 상태 타입 정의
 export type GuideCircle = {
-  circle: Omit<Circle, 'id' | 'chartId' | 'opacity'> | null;
+  circle: Omit<Circle, 'userId' | 'id' | 'chartId' | 'opacity'> | null;
   // circle: Circle | null;
   isVisible: boolean; // 가이드 원의 화면 표시 여부
 };

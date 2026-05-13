@@ -1,3 +1,11 @@
+export type UserResponse = {
+  action: 'USER_ASSIGNED';
+  payload: {
+    userId: string;
+    color: string;
+  };
+};
+
 export type CursorResponse = {
   id: string;
   x: number;
@@ -6,6 +14,7 @@ export type CursorResponse = {
 };
 
 export type CircleResponse = {
+  userId: string;
   id: string;
   chartId: string | null;
   name: string;
