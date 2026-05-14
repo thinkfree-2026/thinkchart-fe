@@ -1,3 +1,6 @@
+import { api } from '../../api/http.ts';
+import { canvasSocket } from '../../sockets/index.ts';
+import { throttle } from '../../utils/index.ts';
 import {
   CIRCLE_COLOR,
   CIRCLE_RADIUS,
@@ -8,7 +11,15 @@ import {
   VALUE_RATIO,
 } from '../constants/index.ts';
 import { screenToWorld } from '../core/index.ts';
-import { brushStore, cameraStore, circleStore, guideCircleStore, selectionStore } from '../store/index.ts';
+import {
+  brushStore,
+  cameraStore,
+  circleStore,
+  cursorStore,
+  guideCircleStore,
+  selectionStore,
+  userStore,
+} from '../store/index.ts';
 
 import { getHoveredCircleIndex } from './collision.ts';
 import { createPulseAnimation } from './pulseAnimation.ts';
@@ -136,13 +147,27 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     }
   };
 
+  // 차트에 사용된 원 잠금
+  const getUnlockedCircleIndex = (worldX: number, worldY: number) => {
+    const index = getHoveredCircleIndex(worldX, worldY);
+
+    if (index !== -1) {
+      const circles = circleStore.getCircles();
+      if (circles[index].chartId !== null) {
+        return -1;
+      }
+    }
+
+    return index;
+  };
+
   // 가이드 원 실시간 업데이트
   const updateGuideCircleState = () => {
     if (pulseAnimation.isCharging) return;
 
     const { camera } = cameraStore.state;
     const worldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
-    const hoveredIndex = getHoveredCircleIndex(worldPosition.x, worldPosition.y);
+    const hoveredIndex = getUnlockedCircleIndex(worldPosition.x, worldPosition.y);
 
     selectionStore.setHover(hoveredIndex);
 
@@ -212,9 +237,9 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
   // 키보드 입력에 따라 액션 제어
   const onKeyDown = (e: KeyboardEvent) => {
-    if (e.code === 'Space') {
+    if (e.code === 'Space' && !isSpacePressed) {
       isSpacePressed = true;
-      canvas.style.cursor = 'grabbing';
+      canvas.style.cursor = 'grab';
     }
 
     // 백스페이스 키 입력 시 선택된 원 삭제
@@ -224,9 +249,16 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       if (selectedIndices.length > 0) {
         e.preventDefault();
 
-        // 삭제 시 인덱스 밀림 방지를 위한 내림차순 정렬
-        const sortedIndices = [...selectedIndices].sort((a, b) => b - a);
-        sortedIndices.forEach(index => circleStore.deleteCircle(index));
+        const circles = circleStore.getCircles();
+        const selectedIds = selectedIndices.map(selectedIndex => circles[selectedIndex].id);
+
+        api.delete(`/canvas/circles`, { params: { ids: selectedIds } }).catch(error => {
+          console.error(error);
+        });
+
+        selectedIds.forEach(selectedIds => {
+          circleStore.deleteCircle(selectedIds);
+        });
 
         selectionStore.setUnselect();
         updateGuideCircleState();
@@ -237,7 +269,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   const onKeyUp = (e: KeyboardEvent) => {
     if (e.code === 'Space') {
       isSpacePressed = false;
-      canvas.style.cursor = 'default';
+      canvas.style.cursor = "url('/cursor-black.png'), auto";
     }
   };
 
@@ -248,7 +280,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
     if (e.button === 1 || (e.button === 0 && isSpacePressed)) {
       isCameraDragging = true;
-      canvas.style.cursor = 'default';
+      canvas.style.cursor = 'grabbing';
       updateGuideCircleState();
       return;
     }
@@ -260,7 +292,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
       const { camera } = cameraStore.state;
       const worldPosition = screenToWorld(e.clientX, e.clientY, camera);
-      const hoveredIndex = getHoveredCircleIndex(worldPosition.x, worldPosition.y);
+      const hoveredIndex = getUnlockedCircleIndex(worldPosition.x, worldPosition.y);
 
       const { selectedIndices } = selectionStore.state.selection;
 
@@ -298,7 +330,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
       const { camera } = cameraStore.state;
       const worldPosition = screenToWorld(e.clientX, e.clientY, camera);
-      const hoveredIndex = getHoveredCircleIndex(worldPosition.x, worldPosition.y);
+      const hoveredIndex = getUnlockedCircleIndex(worldPosition.x, worldPosition.y);
 
       isRightClickDragging = true;
       selectionStore.addSelect(hoveredIndex);
@@ -307,6 +339,16 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     }
   };
 
+  const updateCursor = throttle(
+    (id: string, x: number, y: number) =>
+      canvasSocket.sendCursorPosition({
+        id,
+        x,
+        y,
+        color: '#000000',
+      }),
+    10
+  );
   // 마우스 이동 시 카메라 & 원 위치 이동
   const onPointerMove = (e: PointerEvent) => {
     const { camera } = cameraStore.state;
@@ -318,6 +360,16 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
     currentMousePosition.x = e.clientX;
     currentMousePosition.y = e.clientY;
+
+    const { userId } = userStore.state;
+    updateCursor(userId, currentWorldPosition.x, currentWorldPosition.y);
+
+    cursorStore.setCursor({
+      id: userId,
+      x: currentWorldPosition.x,
+      y: currentWorldPosition.y,
+      color: '#000000',
+    });
 
     if (isCameraDragging) {
       cameraStore.pan(e.movementX, e.movementY);
@@ -342,7 +394,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
     if (isRightClickDragging) {
       // 우클릭 드래그 시 지나가는 원들을 연속으로 배열에 추가
-      const hoveredIndex = getHoveredCircleIndex(currentWorldPosition.x, currentWorldPosition.y);
+      const hoveredIndex = getUnlockedCircleIndex(currentWorldPosition.x, currentWorldPosition.y);
       selectionStore.addSelect(hoveredIndex);
     }
 
@@ -353,7 +405,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   const onPointerUp = (e: PointerEvent) => {
     if (isCameraDragging) {
       isCameraDragging = false;
-      canvas.style.cursor = isSpacePressed ? 'grabbing' : 'default';
+      canvas.style.cursor = isSpacePressed ? 'grab' : "url('/cursor-black.png'), auto";
       stopAutoCameraPanning();
       updateGuideCircleState();
       return;
@@ -390,6 +442,8 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
     // 좌클릭
     if (e.button === 0) {
+      const { userId } = userStore.state;
+
       const finalCount = pulseAnimation.stop();
       const { camera } = cameraStore.state;
       const worldPosition = screenToWorld(currentMousePosition.x, currentMousePosition.y, camera);
@@ -398,7 +452,14 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       const baseRadius = CIRCLE_RADIUS * Math.sqrt(value / RADIUS_RATIO);
       const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
 
+      api.post('/canvas/circles', { userId, x: worldPosition.x, y: worldPosition.y, value }).catch(error => {
+        console.error(error);
+      });
+
       circleStore.addCircle({
+        userId,
+        id: '',
+        chartId: null,
         x: worldPosition.x,
         y: worldPosition.y,
         value,

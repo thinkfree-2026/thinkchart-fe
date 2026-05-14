@@ -1,3 +1,4 @@
+import { circleStore } from '../canvas/store/index.ts';
 import { chartStore } from '../chart/store/index.ts';
 import { chartListState } from '../store/index.ts';
 import type { ChartListItem } from '../types/index.ts';
@@ -10,6 +11,7 @@ export type ChartSocketMessage =
   | {
       action: 'CHART_DELETED';
       payload: {
+        circleIds: string[];
         id: string;
       };
     };
@@ -17,6 +19,14 @@ export type ChartSocketMessage =
 export const handleChartSocketMessage = (message: ChartSocketMessage) => {
   switch (message.action) {
     case 'CHART_CREATED': {
+      const chartId = message.payload.id;
+      const usedCircleIds = message.payload.circleIds;
+      circleStore.getCircles().forEach(circle => {
+        if (usedCircleIds.includes(circle.id)) {
+          circle.chartId = chartId;
+        }
+      });
+
       chartListState.charts = [...chartListState.charts, message.payload];
 
       break;
@@ -58,6 +68,9 @@ export const handleChartSocketMessage = (message: ChartSocketMessage) => {
     }
 
     case 'CHART_DELETED': {
+      const circleIds = message.payload.circleIds;
+      circleIds.forEach(circleId => circleStore.deleteCircle(circleId));
+
       chartListState.charts = chartListState.charts.filter(chart => chart.id !== message.payload.id);
 
       break;

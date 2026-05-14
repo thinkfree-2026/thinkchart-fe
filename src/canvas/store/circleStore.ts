@@ -11,13 +11,13 @@ const CircleStore = () => {
   return {
     state,
     subscribe,
-    getCircles(): Circle[] {
+    getCircles: (): Circle[] => {
       return state.circles;
     },
-    getCount(): number {
+    getCount: (): number => {
       return state.circles.length;
     },
-    addCircle(circle: Circle) {
+    addCircle: (circle: Circle) => {
       if (state.circles.length >= MAX_CIRCLE_COUNT) {
         console.warn(`최대 생성 개수(${MAX_CIRCLE_COUNT})를 초과하여 더 이상 원을 생성할 수 없습니다.`);
         return;
@@ -25,16 +25,26 @@ const CircleStore = () => {
       state.circles.push(circle);
       state.version += 1;
     },
-    deleteCircle(index: number) {
-      if (index >= 0 && index < state.circles.length) {
-        state.circles.splice(index, 1);
+    deleteCircle: (id: string) => {
+      const selectedIndex = state.circles.findIndex(circle => circle.id === id);
+
+      if (selectedIndex !== -1) {
+        state.circles.splice(selectedIndex, 1);
         state.version += 1;
       }
     },
-    updateCirclePosition(index: number, x: number, y: number) {
+    updateCirclePosition: (index: number, x: number, y: number) => {
       if (index >= 0 && index < state.circles.length) {
         state.circles[index].x = x;
         state.circles[index].y = y;
+        state.version += 1;
+      }
+    },
+    updateCircleUserId: (userId: string, id: string) => {
+      const index = state.circles.findIndex(circle => circle.userId === userId && circle.id === '');
+
+      if (index !== -1) {
+        state.circles[index].id = id;
         state.version += 1;
       }
     },

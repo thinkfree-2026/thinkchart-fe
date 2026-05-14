@@ -1,7 +1,16 @@
-import { brushStore, cameraStore, circleStore, guideCircleStore, selectionStore } from '../store/index.ts';
+import {
+  brushStore,
+  cameraStore,
+  circleStore,
+  cursorStore,
+  guideCircleStore,
+  selectionStore,
+  userStore,
+} from '../store/index.ts';
 
 import { drawBrush } from './brushRenderer.ts';
 import { drawCircle } from './circleRenderer.ts';
+import { drawCursor } from './cursorRenderer.ts';
 import { drawHighlight } from './highlightRenderer.ts';
 
 // 캔버스 렌더링 파이프라인 통제 및 하위 렌더러 조율
@@ -87,6 +96,13 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
         }
       });
     }
+
+    // 커서
+    const { userId } = userStore.state;
+    const { cursor } = cursorStore.state;
+    if (cursor && cursor.id !== userId) {
+      drawCursor(ctx, cursor);
+    }
   };
 
   // 브라우저 창 크기가 변할 때 캔버스 해상도 재설정
@@ -103,6 +119,7 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
   const unsubscribeGuideCircle = guideCircleStore.subscribe('guideCircle', requestRender);
   const unsubscribeSelection = selectionStore.subscribe('selection', requestRender);
   const unsubscribeBrush = brushStore.subscribe('brush', requestRender);
+  const unsubscribeCursor = cursorStore.subscribe('cursor', requestRender);
 
   // 캔버스 HTML 요소의 크기 변화를 감지하는 옵저버 등록
   const resizeObserver = new ResizeObserver(entries => {
@@ -120,6 +137,7 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     unsubscribeGuideCircle();
     unsubscribeSelection();
     unsubscribeBrush();
+    unsubscribeCursor();
   });
 
   // 컨트롤러 초기화 직후 화면을 꽉 채우기 위해 리사이즈 이벤트 강제 실행

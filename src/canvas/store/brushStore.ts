@@ -11,10 +11,10 @@ const BrushStore = () => {
   return {
     state,
     subscribe,
-    update(points: Array<{ x: number; y: number }>) {
+    update: (points: Array<{ x: number; y: number }>) => {
       state.brush = { isVisible: true, points };
     },
-    hide() {
+    hide: () => {
       state.brush = { ...state.brush, isVisible: false, points: [] };
     },
   };
