@@ -1,4 +1,5 @@
 import { circleStore } from '../canvas/store/index.ts';
+import { chartStore } from '../chart/store/index.ts';
 import { chartListState } from '../store/index.ts';
 import type { ChartListItem } from '../types/index.ts';
 
@@ -27,18 +28,41 @@ export const handleChartSocketMessage = (message: ChartSocketMessage) => {
       });
 
       chartListState.charts = [...chartListState.charts, message.payload];
+
       break;
     }
 
     case 'CHART_UPDATED': {
+      const updatedChart = message.payload;
+      const { state: chartState } = chartStore;
+
       chartListState.charts = chartListState.charts.map(chart =>
-        chart.id === message.payload.id
-          ? {
-              ...chart,
-              name: message.payload.name,
-            }
-          : chart
+        chart.id === updatedChart.id ? { ...chart, name: updatedChart.name } : chart
       );
+
+      chartState.xAxisName = updatedChart.xaxis;
+      chartState.yAxisName = updatedChart.yaxis;
+      chartState.name = updatedChart.name;
+
+      const xAxisInput = document.getElementById(`${updatedChart.id}-axis-x-input`) as HTMLInputElement | null;
+      if (xAxisInput) {
+        xAxisInput.value = updatedChart.xaxis;
+      }
+
+      const yAxisInput = document.getElementById(`${updatedChart.id}-axis-y-input`) as HTMLInputElement | null;
+      if (yAxisInput) {
+        yAxisInput.value = updatedChart.yaxis;
+      }
+
+      const titleDisplay = document.getElementById(`${updatedChart.id}-chart-title-display`);
+      if (titleDisplay) {
+        titleDisplay.textContent = updatedChart.name;
+      }
+
+      const titleInput = document.getElementById(`${updatedChart.id}-chart-title-input`) as HTMLInputElement | null;
+      if (titleInput) {
+        titleInput.value = updatedChart.name;
+      }
 
       break;
     }
