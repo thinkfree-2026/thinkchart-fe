@@ -6,7 +6,8 @@ export const dataSettingsStore = createStore({
   showSum: false,
 });
 
-export const axisStore = createStore({
+export const chartStore = createStore({
+  name: '',
   showXAxisName: false,
   xAxisName: '',
   showYAxisName: false,

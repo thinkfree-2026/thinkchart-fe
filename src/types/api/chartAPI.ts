@@ -13,6 +13,7 @@ export type ChartList = ChartListItem[];
 
 export type Chart = {
   chartId: string;
+  name: string;
   circles: Circle[];
   xaxis: string;
   yaxis: string;

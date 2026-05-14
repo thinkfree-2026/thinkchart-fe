@@ -1,6 +1,6 @@
 import { api } from '../../api/http.ts';
 import { Button, Input, Toggle } from '../../components/index.ts';
-import { axisStore, dataSettingsStore } from '../store/index.ts';
+import { chartStore, dataSettingsStore } from '../store/index.ts';
 
 import { FieldRow } from './FieldRow.tsx';
 import { Section } from './Section.tsx';
@@ -11,13 +11,13 @@ type ChartOptionPanelProps = {
 
 export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
   const { state: dataSettingsState } = dataSettingsStore;
-  const { state: axisState } = axisStore;
+  const { state: chartState } = chartStore;
 
   const onClickedChangeChart = () => {
     void (async () => {
       await api.patch(`/canvas/charts/${chartId}`, {
-        xAxis: axisState.xAxisName,
-        yAxis: axisState.yAxisName,
+        xAxis: chartState.xAxisName,
+        yAxis: chartState.yAxisName,
       });
     })();
   };
@@ -72,19 +72,19 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
             toggle={
               <Toggle
                 id={`${chartId}-axis-x-toggle`}
-                checked={axisState.showXAxisName}
+                checked={chartState.showXAxisName}
                 onChange={v => {
-                  axisState.showXAxisName = v;
+                  chartState.showXAxisName = v;
                 }}
               />
             }
           />
           <Input
             id={`${chartId}-axis-x-input`}
-            value={axisState.xAxisName}
+            value={chartState.xAxisName}
             placeholder="X축 이름"
             onInput={e => {
-              axisState.xAxisName = (e.target as HTMLInputElement).value;
+              chartState.xAxisName = (e.target as HTMLInputElement).value;
             }}
           />
           <FieldRow
@@ -92,19 +92,19 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
             toggle={
               <Toggle
                 id={`${chartId}-axis-y-toggle`}
-                checked={axisState.showYAxisName}
+                checked={chartState.showYAxisName}
                 onChange={v => {
-                  axisState.showYAxisName = v;
+                  chartState.showYAxisName = v;
                 }}
               />
             }
           />
           <Input
             id={`${chartId}-axis-y-input`}
-            value={axisState.yAxisName}
+            value={chartState.yAxisName}
             placeholder="Y축 이름"
             onInput={e => {
-              axisState.yAxisName = (e.target as HTMLInputElement).value;
+              chartState.yAxisName = (e.target as HTMLInputElement).value;
             }}
           />
         </div>
