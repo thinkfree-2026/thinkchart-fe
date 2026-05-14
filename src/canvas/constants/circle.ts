@@ -9,4 +9,4 @@ export const GUIDE_CIRCLE_COLOR = '#0000000d';
 export const VALUE_RATIO = 10;
 export const RADIUS_RATIO = 10;
 export const MAX_VALUE = 100;
-export const MAX_RADIUS = MAX_VALUE * RADIUS_RATIO;
+export const MAX_RADIUS = CIRCLE_RADIUS * Math.sqrt(MAX_VALUE / RADIUS_RATIO);
