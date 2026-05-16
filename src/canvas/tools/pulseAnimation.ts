@@ -7,7 +7,7 @@ export const createPulseAnimation = (
   let intervalId: number | null = null;
   let animationFrameId: number | null = null;
 
-  // 브라우저 렌더링 주기에 맞춰 사인파(Sine Wave) 애니메이션 계산 및 콜백 실행
+  // 펄스 애니메이션 계산 및 콜백 실행
   const renderAnimate = (time: DOMHighResTimeStamp) => {
     const sineWave = Math.sin(time / 50);
     const pulseSize = sineWave * Math.min(count * 1.5, 5);

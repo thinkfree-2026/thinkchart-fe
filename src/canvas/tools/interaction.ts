@@ -484,6 +484,9 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     }
     isRightClickDragging = false;
     stopBrushAnimation();
+
+    const { userId } = userStore.state;
+    cursorStore.deleteCursor(userId);
   };
 
   const onWheel = (e: WheelEvent) => {

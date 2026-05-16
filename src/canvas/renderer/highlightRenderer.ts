@@ -1,7 +1,6 @@
 import { CIRCLE_HIGHLIGHT_COLOR } from '../constants/index.ts';
 import type { Circle } from '../types/index.ts';
 
-// 상호작용 상태에 맞춰 원 주변에 사각형 박스나 두꺼운 하이라이트 테두리 생성
 export const drawHighlight = (
   ctx: CanvasRenderingContext2D,
   cameraScale: number,

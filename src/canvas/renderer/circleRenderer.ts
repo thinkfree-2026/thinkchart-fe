@@ -1,8 +1,6 @@
 import { CIRCLE_BORDER_COLOR, MAX_VALUE } from '../constants/index.ts';
 import type { Circle } from '../types/index.ts';
 
-// 개별 원과 기본 테두리를 캔버스에 그리는 전담 함수
-// 가이드 원일 경우 테두리를 그리지 않도록 분기 처리
 export const drawCircle = (
   ctx: CanvasRenderingContext2D,
   circle: Circle | Omit<Circle, 'userId' | 'id' | 'chartId' | 'opacity'>,
