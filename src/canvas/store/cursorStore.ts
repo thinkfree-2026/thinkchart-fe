@@ -15,7 +15,7 @@ const createCursorStore = () => {
         [cursor.id]: cursor,
       };
     },
-    removeCursor: (userId: string) => {
+    deleteCursor: (userId: string) => {
       const updatedCursors = { ...state.cursors };
       delete updatedCursors[userId];
 
