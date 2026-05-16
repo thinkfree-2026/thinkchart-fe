@@ -7,9 +7,11 @@ import {
   selectionStore,
   userStore,
 } from '../store/index.ts';
+import type { Circle } from '../types/index.ts';
 
 import { drawBrush } from './brushRenderer.ts';
 import { drawCircle } from './circleRenderer.ts';
+import { drawConnection } from './connectionRenderer.ts';
 import { drawCursor } from './cursorRenderer.ts';
 import { drawHighlight } from './highlightRenderer.ts';
 
@@ -49,6 +51,22 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
 
     const circles = circleStore.getCircles();
     const { hoveredIndex, selectedIndices } = selectionStore.state.selection;
+
+    // 원 연결 선 렌더링
+    const connectedCircles = new Map<string, Circle[]>();
+
+    circles.forEach(circle => {
+      if (circle.chartId !== null) {
+        if (!connectedCircles.has(circle.chartId)) {
+          connectedCircles.set(circle.chartId, []);
+        }
+        connectedCircles.get(circle.chartId)!.push(circle);
+      }
+    });
+
+    if (connectedCircles.size > 0) {
+      drawConnection(ctx, camera.scale, connectedCircles);
+    }
 
     // 원 렌더링
     circles.forEach((circle, index) => {
