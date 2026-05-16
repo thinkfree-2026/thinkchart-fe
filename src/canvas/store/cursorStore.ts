@@ -2,15 +2,27 @@ import { createStore } from '../../utils/index.ts';
 import type { Cursor } from '../types/index.ts';
 
 const createCursorStore = () => {
-  const { state, subscribe } = createStore<{ cursor: Cursor | null }>({
-    cursor: null,
+  const { state, subscribe } = createStore<{ cursors: Record<string, Cursor> }>({
+    cursors: {},
   });
 
   return {
     state,
     subscribe,
     setCursor: (cursor: Cursor) => {
-      state.cursor = cursor;
+      state.cursors = {
+        ...state.cursors,
+        [cursor.id]: cursor,
+      };
+    },
+    removeCursor: (userId: string) => {
+      const updatedCursors = { ...state.cursors };
+      delete updatedCursors[userId];
+
+      state.cursors = updatedCursors;
+    },
+    getCursors: (): Cursor[] => {
+      return Object.values(state.cursors);
     },
   };
 };
