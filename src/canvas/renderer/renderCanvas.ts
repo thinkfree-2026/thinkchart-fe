@@ -1,3 +1,4 @@
+import { chartListState, subscribe as chartListSubscribe } from '../../store/index.ts';
 import {
   brushStore,
   cameraStore,
@@ -53,19 +54,23 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     const { hoveredIndex, selectedIndices } = selectionStore.state.selection;
 
     // 원 연결 선 렌더링
-    const connectedCircles = new Map<string, Circle[]>();
+    const hoveredChartId = chartListState.hoveredChartId;
 
-    circles.forEach(circle => {
-      if (circle.chartId !== null) {
-        if (!connectedCircles.has(circle.chartId)) {
-          connectedCircles.set(circle.chartId, []);
+    if (hoveredChartId !== null) {
+      const chartGroups = new Map<string, Circle[]>();
+
+      circles.forEach(circle => {
+        if (circle.chartId === hoveredChartId) {
+          if (!chartGroups.has(circle.chartId)) {
+            chartGroups.set(circle.chartId, []);
+          }
+          chartGroups.get(circle.chartId)!.push(circle);
         }
-        connectedCircles.get(circle.chartId)!.push(circle);
-      }
-    });
+      });
 
-    if (connectedCircles.size > 0) {
-      drawConnection(ctx, camera.scale, connectedCircles);
+      if (chartGroups.size > 0) {
+        drawConnection(ctx, camera.scale, chartGroups);
+      }
     }
 
     // 원 렌더링
@@ -139,6 +144,7 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
   const unsubscribeSelection = selectionStore.subscribe('selection', requestRender);
   const unsubscribeBrush = brushStore.subscribe('brush', requestRender);
   const unsubscribeCursor = cursorStore.subscribe('cursors', requestRender);
+  const unsubscribeChartList = chartListSubscribe('hoveredChartId', requestRender);
 
   const resizeObserver = new ResizeObserver(entries => {
     const { width, height } = entries[0].contentRect;
@@ -156,6 +162,7 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     unsubscribeSelection();
     unsubscribeBrush();
     unsubscribeCursor();
+    unsubscribeChartList();
   });
 
   // 컨트롤러 초기화 직후 화면을 꽉 채우기 위한 리사이즈 이벤트 실행

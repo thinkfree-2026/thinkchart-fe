@@ -1,5 +1,6 @@
 import { api } from '../../api/http.ts';
 import { canvasSocket } from '../../sockets/index.ts';
+import { chartListState } from '../../store/index.ts';
 import { throttle } from '../../utils/index.ts';
 import {
   CIRCLE_COLOR,
@@ -151,9 +152,14 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   const getUnlockedCircleIndex = (worldX: number, worldY: number) => {
     const index = getHoveredCircleIndex(worldX, worldY);
 
+    if (index === -1) {
+      chartListState.activeId = null;
+    }
+
     if (index !== -1) {
       const circles = circleStore.getCircles();
       if (circles[index].chartId !== null) {
+        chartListState.activeId = circles[index].chartId;
         return -1;
       }
     }

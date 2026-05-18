@@ -2,7 +2,7 @@ import { createStore } from '../../utils/index.ts';
 import { MAX_CIRCLE_COUNT } from '../constants/index.ts';
 import type { Circle } from '../types/index.ts';
 
-const CircleStore = () => {
+const createCircleStore = () => {
   const { state, subscribe } = createStore<{ circles: Circle[]; version: number }>({
     circles: [],
     version: 0,
@@ -48,7 +48,15 @@ const CircleStore = () => {
         state.version += 1;
       }
     },
+    updateCircleChartId: (id: string) => {
+      const index = state.circles.findIndex(circle => circle.id === id);
+
+      if (index !== -1) {
+        state.circles[index].chartId = null;
+        state.version += 1;
+      }
+    },
   };
 };
 
-export const circleStore = CircleStore();
+export const circleStore = createCircleStore();

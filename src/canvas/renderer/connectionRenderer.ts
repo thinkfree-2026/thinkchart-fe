@@ -6,18 +6,34 @@ export const drawConnection = (
   connectedCircles: Map<string, Circle[]>
 ) => {
   ctx.save();
-  ctx.lineWidth = 5 / cameraScale;
-  ctx.strokeStyle = '#E5BCC4';
+  ctx.lineWidth = 1 / cameraScale;
+  ctx.strokeStyle = '#FF007A';
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
+  const tension = 0.2;
+
   connectedCircles.forEach(connectedCircle => {
-    if (connectedCircle.length < 2) return;
+    const length = connectedCircle.length;
+    if (length < 2) return;
 
     ctx.beginPath();
     ctx.moveTo(connectedCircle[0].x, connectedCircle[0].y);
 
-    connectedCircle.forEach(circle => ctx.lineTo(circle.x, circle.y));
+    for (let i = 0; i < length - 1; i++) {
+      const p0 = i === 0 ? connectedCircle[0] : connectedCircle[i - 1];
+      const p1 = connectedCircle[i];
+      const p2 = connectedCircle[i + 1];
+      const p3 = i === length - 2 ? connectedCircle[length - 1] : connectedCircle[i + 2];
+
+      const cp1x = p1.x + (p2.x - p0.x) * tension;
+      const cp1y = p1.y + (p2.y - p0.y) * tension;
+
+      const cp2x = p2.x - (p3.x - p1.x) * tension;
+      const cp2y = p2.y - (p3.y - p1.y) * tension;
+
+      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+    }
 
     ctx.stroke();
   });
