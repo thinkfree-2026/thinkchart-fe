@@ -11,9 +11,27 @@ export const drawCircle = (
   const hasChartId = 'chartId' in circle && circle.chartId != null;
   const circleColor = () => {
     if (isGuide) return circle.color;
-    if (hasChartId) return 'rgba(253, 230, 234, 0.5)';
+    // if (hasChartId) return 'rgba(253, 230, 234, 0.5)';
     return 'rgba(199, 210, 254, 0.5)';
   };
+
+  // 원 바깥쪽 그라데이션
+  if (hasChartId) {
+    const glowSize = 30;
+    const glowRadius = circle.radius + glowSize;
+
+    const gradient = ctx.createRadialGradient(circle.x, circle.y, circle.radius - 1, circle.x, circle.y, glowRadius);
+
+    gradient.addColorStop(0, 'rgba(255, 0, 122, 0.2)');
+    gradient.addColorStop(1, 'rgba(255, 0, 122, 0)');
+
+    ctx.beginPath();
+    ctx.arc(circle.x, circle.y, glowRadius, 0, Math.PI * 2);
+    ctx.arc(circle.x, circle.y, circle.radius - 1, 0, Math.PI * 2, true);
+    ctx.fillStyle = gradient;
+    ctx.fill();
+  }
+
   // 원 생성
   ctx.beginPath();
   ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
@@ -24,14 +42,14 @@ export const drawCircle = (
   const fontSize = Math.max(14, circle.value / 2);
   ctx.font = `bold ${fontSize}px "Noto Sans", sans-serif`;
   ctx.fillStyle = '#000000';
-  ctx.textAlign = 'center'; // Horizontal center
+  ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(String(circle.value), circle.x, circle.y);
 
   // 원 실선 테두리
   if (!isHovered && !isSelected && !isGuide) {
     ctx.lineWidth = 1;
-    ctx.strokeStyle = hasChartId ? '#E18BB0' : CIRCLE_BORDER_COLOR;
+    ctx.strokeStyle = hasChartId ? '#FF007A' : CIRCLE_BORDER_COLOR;
     ctx.stroke();
   }
 
