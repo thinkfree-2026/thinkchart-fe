@@ -248,8 +248,8 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       canvas.style.cursor = 'grab';
     }
 
-    // 백스페이스 키 입력 시 선택된 원 삭제
-    if (e.code === 'Backspace') {
+    // 백스페이스 키 또는 딜리트 키 입력 시 선택된 원 삭제
+    if (e.code === 'Backspace' || e.code === 'Delete') {
       const { selectedIndices } = selectionStore.state.selection;
 
       if (selectedIndices.length > 0) {
