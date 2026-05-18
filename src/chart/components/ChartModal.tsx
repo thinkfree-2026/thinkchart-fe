@@ -164,53 +164,44 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
     );
   };
 
-  const closeTitleInput = async () => {
+  const closeTitleInput = () => {
+    chartTitleRef.current?.replaceChildren(
+      <>
+        <div id={`${chartId}-chart-title-display`} class="text-title">
+          {chartState.name}
+        </div>
+        <div onclick={handleChangeTitleClick} class="cursor-pointer">
+          ✏️
+        </div>
+      </>
+    );
+  };
+
+  const handleChangeTitle = async () => {
     await api.patch(`/canvas/charts/${chartId}`, {
       name: chartState.name,
     });
 
-    chartTitleRef.current?.replaceChildren(
-      <div id={`${chartId}-chart-title-display`} class="text-title" onclick={handleChangeTitleClick}>
-        {chartState.name}
-      </div>
-    );
-
-    document.removeEventListener('click', handleDocumentClick);
-  };
-
-  const handleDocumentClick = (e: MouseEvent) => {
-    const wrapper = inputWrapperRef.current;
-
-    if (!wrapper) return;
-
-    const target = e.target as Node;
-
-    const isOutside = !wrapper.contains(target);
-
-    if (isOutside) {
-      void closeTitleInput();
-    }
+    closeTitleInput();
   };
 
   const handleChangeTitleClick = () => {
     chartTitleRef.current?.replaceChildren(
-      <div ref={inputWrapperRef}>
+      <div ref={inputWrapperRef} class="flex items-center gap-2">
         <Input
           id={`${chartId}-chart-title-input`}
-          style="h-12"
+          style="h-10"
           value={chartState.name ?? ''}
           onInput={(e: Event) => {
             const target = e.target as HTMLInputElement;
-
             chartState.name = target.value;
           }}
         />
+        <div class="cursor-pointer" onclick={handleChangeTitle}>
+          ✅
+        </div>
       </div>
     );
-
-    setTimeout(() => {
-      document.addEventListener('click', handleDocumentClick);
-    });
   };
 
   return (
@@ -228,9 +219,12 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
         }}
       >
         <div class="flex min-w-0 flex-1 flex-col p-10">
-          <div ref={chartTitleRef}>
-            <div id={`${chartId}-chart-title-display`} class="text-title" onclick={handleChangeTitleClick}>
+          <div ref={chartTitleRef} class="flex items-center gap-2">
+            <div id={`${chartId}-chart-title-display`} class="text-title">
               {chartState.name}
+            </div>
+            <div onclick={handleChangeTitleClick} class="cursor-pointer">
+              ✏️
             </div>
           </div>
           <div ref={chartContainerRef} class="relative mt-4 h-full min-w-0 overflow-hidden">
