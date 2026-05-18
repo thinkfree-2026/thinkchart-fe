@@ -1,10 +1,7 @@
-import { api, type ApiResponse } from '../../api/http.ts';
-import { ChartModal } from '../../chart/components/index.ts';
-import { chartDataStore } from '../../chart/store/chartDataStore.ts';
-import { chartStore } from '../../chart/store/index.ts';
-import { modalRoot } from '../../main.ts';
-import { chartListState } from '../../store/chartListStore.ts';
-import type { Chart } from '../../types/api/chartAPI.ts';
+import { api } from '../../api/http.ts';
+
+import { chartListState } from '../../store/index.ts';
+import { openChartModal } from '../../chart/utils/openChartModal.tsx';
 
 type ChartItemProps = {
   id: string;
@@ -16,22 +13,7 @@ export const ChartItem = ({ id, label }: ChartItemProps) => {
     if (chartListState.activeId === id) return;
     chartListState.activeId = id;
 
-    const res: ApiResponse<Chart> = await api.get(`/canvas/charts/${id}`);
-
-    const { state: chartDataState } = chartDataStore;
-    const { state: chartState } = chartStore;
-
-    const circles = res.data.circles;
-    chartDataState.data = circles.map(circle => ({
-      ...circle,
-      isActive: false,
-    }));
-
-    chartState.xAxisName = res.data.xaxis;
-    chartState.yAxisName = res.data.yaxis;
-    chartState.name = res.data.name;
-
-    modalRoot.replaceChildren(<ChartModal chartId={id} />);
+    await openChartModal(id);
   };
 
   const handleDeleteClick = async (e: MouseEvent) => {
