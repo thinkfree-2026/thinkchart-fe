@@ -38,11 +38,7 @@ export const Canvas = () => {
 
     const selectedIds = selectedIndices.map(index => circles[index].id);
 
-    const res: ApiResponse<ChartListItem> = await api
-      .post('/canvas/charts', { circleIds: selectedIds })
-      .catch(error => {
-        console.error(error);
-      });
+    const res: ApiResponse<ChartListItem> = await api.post('/canvas/charts', { circleIds: selectedIds });
 
     if (!chartButtonRef.current) return;
 
