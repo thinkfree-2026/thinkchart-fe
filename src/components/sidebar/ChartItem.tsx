@@ -1,6 +1,8 @@
 import { api } from '../../api/http.ts';
 import { openChartModal } from '../../chart/utils/openChartModal.tsx';
 import { chartListState } from '../../store/index.ts';
+import { openToastMessage } from '../common/Toast.tsx';
+import { toastLayerRef } from '../modal/index.ts';
 
 type ChartItemProps = {
   id: string;
@@ -24,7 +26,9 @@ export const ChartItem = ({ id, label }: ChartItemProps) => {
       chartListState.activeId = null;
     }
 
-    await api.delete(`/canvas/charts/${id}`);
+    await api.delete(`/canvas/charts/${id}`).then(res => {
+      openToastMessage({ dom: toastLayerRef.current, type: 'success', message: res.message });
+    });
   };
 
   return (

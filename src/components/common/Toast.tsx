@@ -17,6 +17,17 @@ const alertStyles = {
   },
 };
 
+export const openToastMessage = ({
+  dom,
+  type,
+  message,
+  description,
+}: AlertProps & {
+  dom: HTMLElement | null;
+}) => {
+  dom?.append(<Toast type={type} message={message} description={description} />);
+};
+
 export const Toast = ({ type, message, description }: AlertProps) => {
   const alertRef = createRef<HTMLDivElement>(null);
 
