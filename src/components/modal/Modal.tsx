@@ -1,6 +1,7 @@
 import { chartListState } from '../../store/index.ts';
 import type { ChildrenType } from '../../types/index.ts';
 import { createRef } from '../../utils/index.ts';
+import { Toast, type AlertProps } from '../common/Toast.tsx';
 
 type ModalProps = {
   id: string;
@@ -8,6 +9,12 @@ type ModalProps = {
   height?: string;
   children?: ChildrenType;
   onClose?: () => void;
+};
+
+const toastLayerRef = createRef<HTMLDivElement>(null);
+
+export const openToastMessage = ({ type, message, description }: AlertProps) => {
+  toastLayerRef.current?.append(<Toast type={type} message={message} description={description} />);
 };
 
 export const Modal = ({ id, width = 'w-[1100px]', height = 'h-[720px]', children, onClose }: ModalProps) => {
@@ -60,6 +67,7 @@ export const Modal = ({ id, width = 'w-[1100px]', height = 'h-[720px]', children
       >
         ✕
       </button>
+      <div ref={toastLayerRef} class="pointer-events-none z-50" />
       {children}
     </dialog>
   );

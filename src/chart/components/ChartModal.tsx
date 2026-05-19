@@ -1,5 +1,5 @@
 import { api } from '../../api/http.ts';
-import { Button, Input, Modal, Popover } from '../../components/index.ts';
+import { Button, Input, Modal, openToastMessage, Popover } from '../../components/index.ts';
 import { chartSocket } from '../../sockets/index.ts';
 import { createRef } from '../../utils/index.ts';
 import { BarChart } from '../BarChart.tsx';
@@ -146,11 +146,15 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
           }}
           onSave={() => {
             void (async () => {
-              await api.patch(`/canvas/charts/${targetData.chartId}/${targetData.id}`, {
-                name: targetData.name,
-                value: targetData.value,
-                // opacity: targetData.opacity > 1 ? targetData.opacity / 100 : targetData.opacity,
-              });
+              await api
+                .patch(`/canvas/charts/${targetData.chartId}/${targetData.id}`, {
+                  name: targetData.name,
+                  value: targetData.value,
+                  // opacity: targetData.opacity > 1 ? targetData.opacity / 100 : targetData.opacity,
+                })
+                .then(res => {
+                  openToastMessage({ type: 'success', message: res.message });
+                });
             })();
           }}
         />
@@ -173,9 +177,13 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
 
   const handleChangeTitle = () => {
     void (async () => {
-      await api.patch(`/canvas/charts/${chartId}`, {
-        name: chartState.name,
-      });
+      await api
+        .patch(`/canvas/charts/${chartId}`, {
+          name: chartState.name,
+        })
+        .then(res => {
+          openToastMessage({ type: 'success', message: res.message });
+        });
     })();
 
     closeTitleInput();
