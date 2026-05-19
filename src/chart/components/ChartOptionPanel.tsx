@@ -1,9 +1,10 @@
 import { api } from '../../api/http.ts';
-import { Button, Input, openToastMessage, Toggle } from '../../components/index.ts';
+import { Button, Input, toastLayerRef, Toggle } from '../../components/index.ts';
 import { chartStore, dataSettingsStore } from '../store/index.ts';
 
 import { FieldRow } from './FieldRow.tsx';
 import { Section } from './Section.tsx';
+import { openToastMessage } from '../../components/common/Toast.tsx';
 
 type ChartOptionPanelProps = {
   chartId: string;
@@ -21,7 +22,7 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
           yAxis: chartState.yAxisName,
         })
         .then(res => {
-          openToastMessage({ type: 'success', message: res.message });
+          openToastMessage({ dom: toastLayerRef.current, type: 'success', message: res.message });
         });
     })();
   };
