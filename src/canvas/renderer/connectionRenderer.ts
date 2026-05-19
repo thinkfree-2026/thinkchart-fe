@@ -1,13 +1,9 @@
 import type { Circle } from '../types/index.ts';
 
-export const drawConnection = (
-  ctx: CanvasRenderingContext2D,
-  cameraScale: number,
-  connectedCircles: Map<string, Circle[]>
-) => {
+export const drawConnection = (ctx: CanvasRenderingContext2D, connectedCircles: Map<string, Circle[]>) => {
   ctx.save();
-  ctx.lineWidth = 1 / cameraScale;
-  ctx.strokeStyle = '#FF007A';
+  ctx.lineWidth = 25;
+  ctx.strokeStyle = 'rgba(255, 162, 178, 0.3)';
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 

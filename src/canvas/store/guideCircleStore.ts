@@ -13,7 +13,7 @@ const createGuideCircleStore = () => {
   return {
     state,
     subscribe,
-    set: (circle: Omit<Circle, 'userId' | 'id' | 'chartId' | 'opacity'>) => {
+    set: (circle: Omit<Circle, 'userId' | 'id' | 'opacity'>) => {
       state.guideCircle = {
         ...state.guideCircle,
         circle,

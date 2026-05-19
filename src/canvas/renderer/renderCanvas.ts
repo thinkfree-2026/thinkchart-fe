@@ -69,7 +69,7 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
       });
 
       if (chartGroups.size > 0) {
-        drawConnection(ctx, camera.scale, chartGroups);
+        drawConnection(ctx, chartGroups);
       }
     }
 

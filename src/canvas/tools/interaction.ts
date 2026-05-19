@@ -1,5 +1,5 @@
-import { api } from '../../api/http.ts';
-import { canvasSocket } from '../../sockets/index.ts';
+import { api, type ApiResponse } from '../../api/http.ts';
+import { canvasSocket, type CircleResponse } from '../../sockets/index.ts';
 import { chartListState } from '../../store/index.ts';
 import { throttle } from '../../utils/index.ts';
 import {
@@ -458,13 +458,11 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       const baseRadius = CIRCLE_RADIUS * Math.sqrt(value / RADIUS_RATIO);
       const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
 
-      api.post('/canvas/circles', { userId, x: worldPosition.x, y: worldPosition.y, value }).catch(error => {
-        console.error(error);
-      });
+      const tempId = crypto.randomUUID();
 
       circleStore.addCircle({
         userId,
-        id: '',
+        id: tempId,
         chartId: null,
         x: worldPosition.x,
         y: worldPosition.y,
@@ -472,6 +470,25 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
         radius: clampedRadius,
         color: CIRCLE_COLOR,
       });
+
+      const addCircle = async () => {
+        try {
+          const res: ApiResponse<CircleResponse> = await api.post('/canvas/circles', {
+            clientCircleId: tempId,
+            userId,
+            x: worldPosition.x,
+            y: worldPosition.y,
+            value,
+          });
+
+          circleStore.updateCircleId(res.data.clientCircleId, res.data.id);
+        } catch (error) {
+          window.alert(error);
+          circleStore.deleteCircle(tempId);
+        }
+      };
+
+      void addCircle();
 
       const newCircleIndex = circleStore.getCircles().length - 1;
       selectionStore.setSelect(newCircleIndex);

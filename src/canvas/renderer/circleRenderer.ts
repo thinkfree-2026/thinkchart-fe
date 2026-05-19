@@ -1,9 +1,10 @@
+import { chartListState } from '../../store/index.ts';
 import { CIRCLE_BORDER_COLOR, MAX_VALUE } from '../constants/index.ts';
 import type { Circle } from '../types/index.ts';
 
 export const drawCircle = (
   ctx: CanvasRenderingContext2D,
-  circle: Circle | Omit<Circle, 'userId' | 'id' | 'chartId' | 'opacity'>,
+  circle: Circle | Omit<Circle, 'userId' | 'id' | 'opacity'>,
   isHovered: boolean,
   isSelected: boolean,
   isGuide: boolean = false
@@ -11,19 +12,20 @@ export const drawCircle = (
   const hasChartId = 'chartId' in circle && circle.chartId != null;
   const circleColor = () => {
     if (isGuide) return circle.color;
-    // if (hasChartId) return 'rgba(253, 230, 234, 0.5)';
+    if (hasChartId && circle.chartId === chartListState.hoveredChartId) return '#FFF3F5';
+    if (hasChartId) return 'rgba(253, 230, 234, 0.5)';
     return 'rgba(199, 210, 254, 0.5)';
   };
 
   // 원 바깥쪽 그라데이션
-  if (hasChartId) {
+  if (hasChartId && circle.chartId === chartListState.hoveredChartId) {
     const glowSize = 30;
     const glowRadius = circle.radius + glowSize;
 
     const gradient = ctx.createRadialGradient(circle.x, circle.y, circle.radius - 1, circle.x, circle.y, glowRadius);
 
-    gradient.addColorStop(0, 'rgba(255, 0, 122, 0.2)');
-    gradient.addColorStop(1, 'rgba(255, 0, 122, 0)');
+    gradient.addColorStop(0, 'rgba(255, 243, 245, 0.25)');
+    gradient.addColorStop(1, 'rgba(255, 139, 176, 0)');
 
     ctx.beginPath();
     ctx.arc(circle.x, circle.y, glowRadius, 0, Math.PI * 2);
@@ -49,7 +51,7 @@ export const drawCircle = (
   // 원 실선 테두리
   if (!isHovered && !isSelected && !isGuide) {
     ctx.lineWidth = 1;
-    ctx.strokeStyle = hasChartId ? '#FF007A' : CIRCLE_BORDER_COLOR;
+    ctx.strokeStyle = hasChartId ? '#E18BB0' : CIRCLE_BORDER_COLOR;
     ctx.stroke();
   }
 
