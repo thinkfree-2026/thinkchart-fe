@@ -1,3 +1,4 @@
+import { chartListState, subscribe as chartListSubscribe } from '../../store/index.ts';
 import {
   brushStore,
   cameraStore,
@@ -7,9 +8,11 @@ import {
   selectionStore,
   userStore,
 } from '../store/index.ts';
+import type { Circle } from '../types/index.ts';
 
 import { drawBrush } from './brushRenderer.ts';
 import { drawCircle } from './circleRenderer.ts';
+import { drawConnection } from './connectionRenderer.ts';
 import { drawCursor } from './cursorRenderer.ts';
 import { drawHighlight } from './highlightRenderer.ts';
 
@@ -49,6 +52,29 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
 
     const circles = circleStore.getCircles();
     const { hoveredIndex, selectedIndices } = selectionStore.state.selection;
+
+    // 원 연결 선 렌더링
+    const hoveredChartId = chartListState.hoveredChartId;
+
+    if (hoveredChartId !== null) {
+      const chartsMap = new Map<string, Circle[]>();
+
+      circles.forEach(circle => {
+        if (circle.chartId === hoveredChartId) {
+          const charts = chartsMap.get(circle.chartId);
+
+          if (charts) {
+            charts.push(circle);
+          } else {
+            chartsMap.set(circle.chartId, [circle]);
+          }
+        }
+      });
+
+      if (chartsMap.size > 0) {
+        drawConnection(ctx, chartsMap);
+      }
+    }
 
     // 원 렌더링
     circles.forEach((circle, index) => {
@@ -121,6 +147,7 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
   const unsubscribeSelection = selectionStore.subscribe('selection', requestRender);
   const unsubscribeBrush = brushStore.subscribe('brush', requestRender);
   const unsubscribeCursor = cursorStore.subscribe('cursors', requestRender);
+  const unsubscribeChartList = chartListSubscribe('hoveredChartId', requestRender);
 
   const resizeObserver = new ResizeObserver(entries => {
     const { width, height } = entries[0].contentRect;
@@ -138,6 +165,7 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     unsubscribeSelection();
     unsubscribeBrush();
     unsubscribeCursor();
+    unsubscribeChartList();
   });
 
   // 컨트롤러 초기화 직후 화면을 꽉 채우기 위한 리사이즈 이벤트 실행

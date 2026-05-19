@@ -34,6 +34,12 @@ export const ChartItem = ({ id, label }: ChartItemProps) => {
   return (
     <div
       onclick={handleClick}
+      onmouseenter={() => {
+        chartListState.hoveredChartId = id;
+      }}
+      onmouseleave={() => {
+        chartListState.hoveredChartId = null;
+      }}
       class={`group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-caption transition ${
         chartListState.activeId === id ? 'bg-primary/10 font-semibold text-primary' : 'text-gray-500 hover:bg-gray-100'
       } `}

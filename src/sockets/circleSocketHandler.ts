@@ -16,13 +16,9 @@ export type CircleSocketMessage =
 export const handleCircleSocketMessage = (message: CircleSocketMessage) => {
   switch (message.action) {
     case 'CIRCLE_CREATED': {
-      const isNewCircle = circleStore
-        .getCircles()
-        .some(circle => circle.userId === message.payload.userId && circle.id === '');
+      const isMyCircle = circleStore.getCircles().some(circle => circle.id === message.payload.clientCircleId);
 
-      if (isNewCircle) {
-        circleStore.updateCircleUserId(message.payload.userId, message.payload.id);
-      } else {
+      if (!isMyCircle) {
         circleStore.addCircle({
           ...message.payload,
           radius: CIRCLE_RADIUS * Math.sqrt(message.payload.value / CIRCLE_VALUE),
