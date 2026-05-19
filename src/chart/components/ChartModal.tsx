@@ -1,5 +1,7 @@
 import { api } from '../../api/http.ts';
+import { openToastMessage } from '../../components/common/Toast.tsx';
 import { Button, Input, Modal, Popover, toastLayerRef } from '../../components/index.ts';
+import { handleCharModalSocketMessage } from '../../sockets/chartModalSocketHandler.ts';
 import { chartSocket } from '../../sockets/index.ts';
 import { createRef } from '../../utils/index.ts';
 import { BarChart } from '../BarChart.tsx';
@@ -7,8 +9,6 @@ import { chartDataStore, chartStore } from '../store/index.ts';
 import type { PopoverInfo } from '../types/index.ts';
 
 import { ChartOptionPanel } from './ChartOptionPanel.tsx';
-import { handleCharModalSocketMessage } from '../../sockets/chartModalSocketHandler.ts';
-import { openToastMessage } from '../../components/common/Toast.tsx';
 
 type ChartModalProps = {
   chartId: string;
