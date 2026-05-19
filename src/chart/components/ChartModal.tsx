@@ -7,21 +7,22 @@ import { chartDataStore, chartStore } from '../store/index.ts';
 import type { PopoverInfo } from '../types/index.ts';
 
 import { ChartOptionPanel } from './ChartOptionPanel.tsx';
+import { handleCharModalSocketMessage } from '../../sockets/chartModalSocketHandler.ts';
 
 type ChartModalProps = {
   chartId: string;
 };
 
+export const chartControlsRef = createRef<{ redraw: () => void } | null>(null);
+
 export const ChartModal = ({ chartId }: ChartModalProps) => {
   const { state: chartDataState } = chartDataStore;
   const { state: chartState } = chartStore;
 
-  const chartContainerRef = createRef<HTMLDivElement>(null);
   const chartTitleRef = createRef<HTMLDivElement>(null);
   const inputWrapperRef = createRef<HTMLDivElement>(null);
-
+  const chartContainerRef = createRef<HTMLDivElement>(null);
   const popoverLayerRef = createRef<HTMLDivElement>(null);
-  const chartControlsRef = createRef<{ redraw: () => void } | null>(null);
   const selectedBarRef = createRef<PopoverInfo | null>(null);
 
   let isSocketConnected = false;
@@ -31,43 +32,7 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
 
     isSocketConnected = true;
 
-    chartSocket.enterChartSession(chartId, message => {
-      switch (message.action) {
-        case 'CHART_BAR_UPDATED': {
-          const updatedChartBar = message.payload;
-
-          const target = chartDataState.data.find(data => data.id === updatedChartBar.circleId);
-
-          if (!target) return;
-
-          target.name = updatedChartBar.name;
-          target.value = updatedChartBar.value;
-          target.opacity = updatedChartBar.opacity;
-
-          requestAnimationFrame(() => {
-            chartControlsRef.current?.redraw();
-          });
-          break;
-        }
-        case 'CHART_BAR_DELETED': {
-          const deleteChartBar = message.payload;
-
-          const targetIndex = chartDataState.data.findIndex(data => data.id === deleteChartBar);
-
-          if (targetIndex === -1) return;
-
-          chartDataState.data.splice(targetIndex, 1);
-
-          requestAnimationFrame(() => {
-            chartControlsRef.current?.redraw();
-          });
-
-          break;
-        }
-        default:
-          break;
-      }
-    });
+    handleCharModalSocketMessage(chartId);
   };
 
   const getPopoverPosition = (barInfo: PopoverInfo) => {
