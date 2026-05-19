@@ -1,7 +1,6 @@
 import { api } from '../../api/http.ts';
-
-import { chartListState } from '../../store/index.ts';
 import { openChartModal } from '../../chart/utils/openChartModal.tsx';
+import { chartListState } from '../../store/index.ts';
 
 type ChartItemProps = {
   id: string;

@@ -1,8 +1,8 @@
 import { api, type ApiResponse } from '../../api/http.ts';
-import type { Chart } from '../../types';
-import { chartDataStore, chartStore } from '../store/index.ts';
 import { modalRoot } from '../../main.ts';
+import type { Chart } from '../../types';
 import { ChartModal } from '../components/index.ts';
+import { chartDataStore, chartStore } from '../store/index.ts';
 
 export const openChartModal = async (chartId: string) => {
   const chartRes: ApiResponse<Chart> = await api.get(`/canvas/charts/${chartId}`);
