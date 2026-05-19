@@ -1,5 +1,6 @@
-import { api } from '../../api/http.ts';
-import { canvasSocket } from '../../sockets/index.ts';
+import { api, type ApiResponse } from '../../api/http.ts';
+import { canvasSocket, type CircleResponse } from '../../sockets/index.ts';
+import { chartListState } from '../../store/index.ts';
 import { throttle } from '../../utils/index.ts';
 import {
   CIRCLE_COLOR,
@@ -51,6 +52,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
 
       guideCircleStore.set({
+        chartId: null,
         x: worldPosition.x,
         y: worldPosition.y,
         value,
@@ -151,12 +153,19 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   const getUnlockedCircleIndex = (worldX: number, worldY: number) => {
     const index = getHoveredCircleIndex(worldX, worldY);
 
-    if (index !== -1) {
-      const circles = circleStore.getCircles();
-      if (circles[index].chartId !== null) {
-        return -1;
-      }
+    if (index === -1) {
+      chartListState.activeId = null;
+      return -1;
     }
+
+    const circles = circleStore.getCircles();
+    const chartId = circles[index].chartId;
+    if (chartId !== null) {
+      chartListState.activeId = chartId;
+      return -1;
+    }
+
+    chartListState.activeId = null;
 
     return index;
   };
@@ -184,6 +193,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
 
     guideCircleStore.set({
+      chartId: null,
       x: worldPosition.x,
       y: worldPosition.y,
       value,
@@ -242,8 +252,8 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       canvas.style.cursor = 'grab';
     }
 
-    // 백스페이스 키 입력 시 선택된 원 삭제
-    if (e.code === 'Backspace') {
+    // 백스페이스 키 또는 딜리트 키 입력 시 선택된 원 삭제
+    if (e.code === 'Backspace' || e.code === 'Delete') {
       const { selectedIndices } = selectionStore.state.selection;
 
       if (selectedIndices.length > 0) {
@@ -452,13 +462,11 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       const baseRadius = CIRCLE_RADIUS * Math.sqrt(value / RADIUS_RATIO);
       const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
 
-      api.post('/canvas/circles', { userId, x: worldPosition.x, y: worldPosition.y, value }).catch(error => {
-        console.error(error);
-      });
+      const tempId = crypto.randomUUID();
 
       circleStore.addCircle({
         userId,
-        id: '',
+        id: tempId,
         chartId: null,
         x: worldPosition.x,
         y: worldPosition.y,
@@ -466,6 +474,27 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
         radius: clampedRadius,
         color: CIRCLE_COLOR,
       });
+
+      const addCircle = async () => {
+        try {
+          const res: ApiResponse<CircleResponse> = await api.post('/canvas/circles', {
+            clientCircleId: tempId,
+            userId,
+            x: worldPosition.x,
+            y: worldPosition.y,
+            value,
+          });
+
+          circleStore.updateCircleId(res.data.clientCircleId, res.data.id);
+        } catch (error) {
+          window.alert(error);
+          circleStore.deleteCircle(tempId);
+          selectionStore.setUnselect();
+          updateGuideCircleState();
+        }
+      };
+
+      void addCircle();
 
       const newCircleIndex = circleStore.getCircles().length - 1;
       selectionStore.setSelect(newCircleIndex);

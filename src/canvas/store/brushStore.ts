@@ -1,6 +1,6 @@
 import { createStore } from '../../utils/index.ts';
 
-const BrushStore = () => {
+const createBrushStore = () => {
   const { state, subscribe } = createStore({
     brush: {
       isVisible: false,
@@ -20,4 +20,4 @@ const BrushStore = () => {
   };
 };
 
-export const brushStore = BrushStore();
+export const brushStore = createBrushStore();

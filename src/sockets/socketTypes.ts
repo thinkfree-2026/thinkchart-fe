@@ -14,6 +14,7 @@ export type CursorResponse = {
 };
 
 export type CircleResponse = {
+  clientCircleId: string;
   userId: string;
   id: string;
   chartId: string | null;
