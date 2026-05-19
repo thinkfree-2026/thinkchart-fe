@@ -529,6 +529,15 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       resizeHandle = null;
       canvas.style.cursor = isSpacePressed ? 'grab' : "url('/cursor-black.png'), auto";
 
+      const circle = circleStore.getCircles()[resizingCircleIndex];
+      if (circle != null) {
+        api
+          .patch(`/canvas/circles/${circle.id}`, {
+            value: circle.value,
+          })
+          .catch(error => console.error(error));
+      }
+
       resizingCircleIndex = -1;
       return;
     }
