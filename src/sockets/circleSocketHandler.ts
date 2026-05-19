@@ -9,7 +9,7 @@ export type CircleSocketMessage =
       payload: CircleResponse;
     }
   | {
-      action: 'CIRCLE_DELETED';
+      action: 'CIRCLE_DELETED' | 'CIRCLE_MULTI_MOVED';
       payload: CircleResponse[];
     };
 
@@ -36,6 +36,16 @@ export const handleCircleSocketMessage = (message: CircleSocketMessage) => {
       const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
 
       circleStore.updateCircleSize(index, clampedRadius, value);
+      break;
+    }
+    case 'CIRCLE_MULTI_MOVED': {
+      const movedCircles = message.payload;
+
+      movedCircles.forEach(movedCircle => {
+        const index = circleStore.getCircles().findIndex(circle => circle.id === movedCircle.id);
+        circleStore.updateCirclePosition(index, movedCircle.x, movedCircle.y);
+      });
+
       break;
     }
     case 'CIRCLE_DELETED': {

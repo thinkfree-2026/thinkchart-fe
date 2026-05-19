@@ -117,11 +117,11 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     let maxScreenY = -Infinity;
 
     selectedIndices.forEach(selectedIndex => {
-      const targetCircle = circles[selectedIndex];
+      const selectedCircle = circles[selectedIndex];
       // 월드 좌표 기반의 원 위치를 현재 카메라 배율이 반영된 화면 픽셀 좌표로 변환
-      const screenX = targetCircle.x * camera.scale + camera.x;
-      const screenY = targetCircle.y * camera.scale + camera.y;
-      const screenRadius = targetCircle.radius * camera.scale;
+      const screenX = selectedCircle.x * camera.scale + camera.x;
+      const screenY = selectedCircle.y * camera.scale + camera.y;
+      const screenRadius = selectedCircle.radius * camera.scale;
 
       minScreenX = Math.min(minScreenX, screenX - screenRadius);
       maxScreenX = Math.max(maxScreenX, screenX + screenRadius);
@@ -154,11 +154,11 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
       // 다중 원 이동
       selectedIndices.forEach(selectedIndex => {
-        const targetCircle = circles[selectedIndex];
+        const selectedCircle = circles[selectedIndex];
         circleStore.updateCirclePosition(
           selectedIndex,
-          targetCircle.x - panSpeedX / camera.scale,
-          targetCircle.y - panSpeedY / camera.scale
+          selectedCircle.x - panSpeedX / camera.scale,
+          selectedCircle.y - panSpeedY / camera.scale
         );
       });
 
@@ -425,12 +425,14 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     const { userId } = userStore.state;
     updateCursor(userId, currentWorldPosition.x, currentWorldPosition.y);
 
-    cursorStore.setCursor({
-      id: userId,
-      x: currentWorldPosition.x,
-      y: currentWorldPosition.y,
-      color: '#000000',
-    });
+    if (userId !== '') {
+      cursorStore.setCursor({
+        id: userId,
+        x: currentWorldPosition.x,
+        y: currentWorldPosition.y,
+        color: '#000000',
+      });
+    }
 
     if (isCameraDragging) {
       cameraStore.pan(e.movementX, e.movementY);
@@ -447,8 +449,8 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
         // 선택된 모든 원 좌표 갱신
         selectedIndices.forEach(index => {
-          const targetCircle = circles[index];
-          circleStore.updateCirclePosition(index, targetCircle.x + deltaWorldX, targetCircle.y + deltaWorldY);
+          const selectedCircle = circles[index];
+          circleStore.updateCirclePosition(index, selectedCircle.x + deltaWorldX, selectedCircle.y + deltaWorldY);
         });
       }
     }
@@ -507,6 +509,22 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     if (isCircleDragging) {
       isCircleDragging = false;
       stopAutoCameraPanning();
+
+      const { selectedIndices } = selectionStore.state.selection;
+
+      if (selectedIndices.length > 0) {
+        const circles = circleStore.getCircles();
+        const selectedCircles: { id: string; x: number; y: number }[] = [];
+
+        selectedIndices.forEach(index => {
+          const circle = circles[index];
+          const selectedCircle = { id: circle.id, x: circle.x, y: circle.y };
+
+          selectedCircles.push(selectedCircle);
+        });
+
+        api.patch(`/canvas/circles`, selectedCircles).catch(error => console.error(error));
+      }
 
       // 좌클릭으로 제자리에서 눌렀다 뗀 경우
       if (e.button === 0 && !hasMovedDuringClick) {
