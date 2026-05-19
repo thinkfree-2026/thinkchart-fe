@@ -1,5 +1,5 @@
 import { api } from '../../api/http.ts';
-import { Input, Modal, Popover } from '../../components/index.ts';
+import { Button, Input, Modal, Popover } from '../../components/index.ts';
 import { chartSocket } from '../../sockets/index.ts';
 import { createRef } from '../../utils/index.ts';
 import { BarChart } from '../BarChart.tsx';
@@ -86,19 +86,13 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
     const scrollContainer = layer.parentElement?.querySelector(
       '[data-chart-scroll-container="true"]'
     ) as HTMLElement | null;
-
     const scrollLeft = scrollContainer?.scrollLeft ?? 0;
-
     const anchorX = barInfo.x - scrollLeft;
-
     const rightLeft = anchorX + GAP;
-
     const hasRightRoom = rightLeft + POPOVER_WIDTH <= layerWidth - SAFE;
-
     const left = hasRightRoom
       ? rightLeft
       : Math.max(SAFE, Math.min(layerWidth - POPOVER_WIDTH - SAFE, anchorX - POPOVER_WIDTH - GAP));
-
     const top = Math.max(SAFE, Math.min(layerHeight - POPOVER_HEIGHT - SAFE, barInfo.y - POPOVER_HEIGHT / 2));
 
     return { left, top };
@@ -124,7 +118,7 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
           id={`${chartId}-bar-popover`}
           label={targetData.name}
           value={targetData.value}
-          opacity={targetData.opacity ?? 100}
+          // opacity={targetData.opacity ?? 100}
           onNameInput={(nextName: string) => {
             targetData.name = nextName;
 
@@ -134,10 +128,10 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
             targetData.value = nextValue;
             chartControlsRef.current?.redraw();
           }}
-          onOpacityInput={(nextOpacity: number) => {
-            targetData.opacity = nextOpacity;
-            chartControlsRef.current?.redraw();
-          }}
+          // onOpacityInput={(nextOpacity: number) => {
+          //   targetData.opacity = nextOpacity;
+          //   chartControlsRef.current?.redraw();
+          // }}
           onDelete={() => {
             const targetIndex = chartDataState.data.findIndex(data => data.id === targetData.id);
             if (targetIndex !== -1) {
@@ -155,7 +149,7 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
               await api.patch(`/canvas/charts/${targetData.chartId}/${targetData.id}`, {
                 name: targetData.name,
                 value: targetData.value,
-                opacity: targetData.opacity > 1 ? targetData.opacity / 100 : targetData.opacity,
+                // opacity: targetData.opacity > 1 ? targetData.opacity / 100 : targetData.opacity,
               });
             })();
           }}
@@ -177,10 +171,12 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
     );
   };
 
-  const handleChangeTitle = async () => {
-    await api.patch(`/canvas/charts/${chartId}`, {
-      name: chartState.name,
-    });
+  const handleChangeTitle = () => {
+    void (async () => {
+      await api.patch(`/canvas/charts/${chartId}`, {
+        name: chartState.name,
+      });
+    })();
 
     closeTitleInput();
   };
@@ -197,8 +193,8 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
             chartState.name = target.value;
           }}
         />
-        <div class="cursor-pointer" onclick={handleChangeTitle}>
-          ✅
+        <div class="h-10 w-20">
+          <Button label="저장" color="primary" onClick={handleChangeTitle} />
         </div>
       </div>
     );
