@@ -16,9 +16,7 @@ export const handleCursorSocketMessage = (message: CursorSocketMessage) => {
       break;
     }
     case 'CURSOR_LEAVE': {
-      const { userId } = userStore.state;
-
-      if (userId === message.payload.id) cursorStore.deleteCursor(userId);
+      cursorStore.deleteCursor(message.payload.id);
       break;
     }
   }
