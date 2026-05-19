@@ -100,7 +100,16 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
 
     // 호버 표시 렌더링
     if (hoveredIndex !== -1 && !selectedIndices.includes(hoveredIndex) && hoveredIndex < circles.length) {
-      drawHighlight(ctx, camera.scale, circles[hoveredIndex], false, 0.0, true, BASE_THICKNESS * 2);
+      drawHighlight(
+        ctx,
+        camera.scale,
+        circles[hoveredIndex],
+        false,
+        0.0,
+        true,
+        BASE_THICKNESS * 2,
+        selectedIndices.length === 1
+      );
     }
 
     // 선택 표시 렌더링
@@ -116,7 +125,8 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
             true,
             BASE_THICKNESS,
             true,
-            isHoveringSelected ? BASE_THICKNESS * 2 : BASE_THICKNESS
+            isHoveringSelected ? BASE_THICKNESS * 2 : BASE_THICKNESS,
+            selectedIndices.length === 1
           );
         }
       });

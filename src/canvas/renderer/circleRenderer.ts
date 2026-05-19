@@ -41,7 +41,8 @@ export const drawCircle = (
   ctx.fill();
 
   // 원 내부 텍스트
-  const fontSize = Math.max(14, circle.value / 2);
+  // const fontSize = Math.min(14, circle.value / 2);
+  const fontSize = Math.min(Math.max(circle.value, 14), 72);
   ctx.font = `bold ${fontSize}px "Noto Sans", sans-serif`;
   ctx.fillStyle = '#000000';
   ctx.textAlign = 'center';
