@@ -1,10 +1,10 @@
 import { api } from '../../api/http.ts';
+import { openToastMessage } from '../../components/common/Toast.tsx';
 import { Button, Input, toastLayerRef, Toggle } from '../../components/index.ts';
 import { chartStore, dataSettingsStore } from '../store/index.ts';
 
 import { FieldRow } from './FieldRow.tsx';
 import { Section } from './Section.tsx';
-import { openToastMessage } from '../../components/common/Toast.tsx';
 
 type ChartOptionPanelProps = {
   chartId: string;
