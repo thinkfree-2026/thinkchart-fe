@@ -78,7 +78,7 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
     const POPOVER_WIDTH = 220;
     const POPOVER_HEIGHT = 140;
     const GAP = 40;
-    const SAFE = 8;
+    const SAFE = 10;
 
     const layerWidth = layer.clientWidth;
     const layerHeight = layer.clientHeight;
