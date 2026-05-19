@@ -1,5 +1,6 @@
 export type Circle = {
   id: string;
+  userId: string;
   chartId: string | null;
   name: string;
   x: number;

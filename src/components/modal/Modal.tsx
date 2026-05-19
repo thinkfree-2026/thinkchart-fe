@@ -10,6 +10,8 @@ type ModalProps = {
   onClose?: () => void;
 };
 
+export const toastLayerRef = createRef<HTMLDivElement>(null);
+
 export const Modal = ({ id, width = 'w-[1100px]', height = 'h-[720px]', children, onClose }: ModalProps) => {
   const modalRef = createRef<HTMLDialogElement>(null);
 
@@ -60,6 +62,7 @@ export const Modal = ({ id, width = 'w-[1100px]', height = 'h-[720px]', children
       >
         ✕
       </button>
+      <div ref={toastLayerRef} class="pointer-events-none z-50" />
       {children}
     </dialog>
   );

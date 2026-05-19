@@ -1,4 +1,4 @@
-import { Button, Input, Slider } from '../common/index.ts';
+import { Button, Input } from '../common/index.ts';
 
 type PopoverProps = {
   id?: string;
@@ -16,10 +16,10 @@ export const Popover = ({
   id = 'popover',
   label,
   value,
-  opacity = 100,
+  // opacity = 100,
   onNameInput,
   onValueInput,
-  onOpacityInput,
+  // onOpacityInput,
   onDelete,
   onSave,
 }: PopoverProps = {}) => {
@@ -37,8 +37,13 @@ export const Popover = ({
             />
           </div>
         </div>
-        <button type="button" onclick={onDelete} class="text-sm transition hover:opacity-70" aria-label="Delete">
-          🗑
+        <button
+          type="button"
+          onclick={onDelete}
+          class="cursor-pointer text-sm transition hover:opacity-70"
+          aria-label="Delete"
+        >
+          🗑️
         </button>
       </header>
       <div class="my-3 h-px bg-zinc-200"></div>
@@ -52,7 +57,7 @@ export const Popover = ({
           onValueInput?.(nextValue);
         }}
       />
-      <Slider id={`${id}-slider`} value={opacity * 100} onInput={onOpacityInput} />
+      {/*<Slider id={`${id}-slider`} value={opacity * 100} onInput={onOpacityInput} />*/}
       <div class="mt-3 h-6 text-xs">
         <Button label="저장" onClick={onSave} />
       </div>

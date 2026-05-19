@@ -1,3 +1,6 @@
+import { openToastMessage } from '../components/common/Toast.tsx';
+import { toastRoot } from '../main.ts';
+
 import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from 'axios';
 
 export type ApiResponse<T> = {
@@ -21,6 +24,7 @@ httpClient.interceptors.response.use(
   (error: AxiosError) => {
     if (error.response) {
       console.error(`[API Error] ${error.response.status}:`, error.message);
+      openToastMessage({ dom: toastRoot, type: 'error', message: 'Error!' });
     }
     return Promise.reject(error);
   }

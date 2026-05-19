@@ -1,5 +1,7 @@
 import { api } from '../../api/http.ts';
-import { Input, Modal, Popover } from '../../components/index.ts';
+import { openToastMessage } from '../../components/common/Toast.tsx';
+import { Button, Input, Modal, Popover, toastLayerRef } from '../../components/index.ts';
+import { handleCharModalSocketMessage } from '../../sockets/chartModalSocketHandler.ts';
 import { chartSocket } from '../../sockets/index.ts';
 import { createRef } from '../../utils/index.ts';
 import { BarChart } from '../BarChart.tsx';
@@ -12,16 +14,16 @@ type ChartModalProps = {
   chartId: string;
 };
 
+export const chartControlsRef = createRef<{ redraw: () => void } | null>(null);
+
 export const ChartModal = ({ chartId }: ChartModalProps) => {
   const { state: chartDataState } = chartDataStore;
   const { state: chartState } = chartStore;
 
-  const chartContainerRef = createRef<HTMLDivElement>(null);
   const chartTitleRef = createRef<HTMLDivElement>(null);
   const inputWrapperRef = createRef<HTMLDivElement>(null);
-
+  const chartContainerRef = createRef<HTMLDivElement>(null);
   const popoverLayerRef = createRef<HTMLDivElement>(null);
-  const chartControlsRef = createRef<{ redraw: () => void } | null>(null);
   const selectedBarRef = createRef<PopoverInfo | null>(null);
 
   let isSocketConnected = false;
@@ -31,43 +33,7 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
 
     isSocketConnected = true;
 
-    chartSocket.enterChartSession(chartId, message => {
-      switch (message.action) {
-        case 'CHART_BAR_UPDATED': {
-          const updatedChartBar = message.payload;
-
-          const target = chartDataState.data.find(data => data.id === updatedChartBar.circleId);
-
-          if (!target) return;
-
-          target.name = updatedChartBar.name;
-          target.value = updatedChartBar.value;
-          target.opacity = updatedChartBar.opacity;
-
-          requestAnimationFrame(() => {
-            chartControlsRef.current?.redraw();
-          });
-          break;
-        }
-        case 'CHART_BAR_DELETED': {
-          const deleteChartBar = message.payload;
-
-          const targetIndex = chartDataState.data.findIndex(data => data.id === deleteChartBar);
-
-          if (targetIndex === -1) return;
-
-          chartDataState.data.splice(targetIndex, 1);
-
-          requestAnimationFrame(() => {
-            chartControlsRef.current?.redraw();
-          });
-
-          break;
-        }
-        default:
-          break;
-      }
-    });
+    handleCharModalSocketMessage(chartId);
   };
 
   const getPopoverPosition = (barInfo: PopoverInfo) => {
@@ -78,7 +44,7 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
     const POPOVER_WIDTH = 220;
     const POPOVER_HEIGHT = 140;
     const GAP = 40;
-    const SAFE = 8;
+    const SAFE = 10;
 
     const layerWidth = layer.clientWidth;
     const layerHeight = layer.clientHeight;
@@ -86,19 +52,13 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
     const scrollContainer = layer.parentElement?.querySelector(
       '[data-chart-scroll-container="true"]'
     ) as HTMLElement | null;
-
     const scrollLeft = scrollContainer?.scrollLeft ?? 0;
-
     const anchorX = barInfo.x - scrollLeft;
-
     const rightLeft = anchorX + GAP;
-
     const hasRightRoom = rightLeft + POPOVER_WIDTH <= layerWidth - SAFE;
-
     const left = hasRightRoom
       ? rightLeft
       : Math.max(SAFE, Math.min(layerWidth - POPOVER_WIDTH - SAFE, anchorX - POPOVER_WIDTH - GAP));
-
     const top = Math.max(SAFE, Math.min(layerHeight - POPOVER_HEIGHT - SAFE, barInfo.y - POPOVER_HEIGHT / 2));
 
     return { left, top };
@@ -124,7 +84,7 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
           id={`${chartId}-bar-popover`}
           label={targetData.name}
           value={targetData.value}
-          opacity={targetData.opacity ?? 100}
+          // opacity={targetData.opacity ?? 100}
           onNameInput={(nextName: string) => {
             targetData.name = nextName;
 
@@ -134,10 +94,10 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
             targetData.value = nextValue;
             chartControlsRef.current?.redraw();
           }}
-          onOpacityInput={(nextOpacity: number) => {
-            targetData.opacity = nextOpacity;
-            chartControlsRef.current?.redraw();
-          }}
+          // onOpacityInput={(nextOpacity: number) => {
+          //   targetData.opacity = nextOpacity;
+          //   chartControlsRef.current?.redraw();
+          // }}
           onDelete={() => {
             const targetIndex = chartDataState.data.findIndex(data => data.id === targetData.id);
             if (targetIndex !== -1) {
@@ -152,11 +112,15 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
           }}
           onSave={() => {
             void (async () => {
-              await api.patch(`/canvas/charts/${targetData.chartId}/${targetData.id}`, {
-                name: targetData.name,
-                value: targetData.value,
-                opacity: targetData.opacity > 1 ? targetData.opacity / 100 : targetData.opacity,
-              });
+              await api
+                .patch(`/canvas/charts/${targetData.chartId}/${targetData.id}`, {
+                  name: targetData.name,
+                  value: targetData.value,
+                  // opacity: targetData.opacity > 1 ? targetData.opacity / 100 : targetData.opacity,
+                })
+                .then(res => {
+                  openToastMessage({ dom: toastLayerRef.current, type: 'success', message: res.message });
+                });
             })();
           }}
         />
@@ -164,53 +128,50 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
     );
   };
 
-  const closeTitleInput = async () => {
-    await api.patch(`/canvas/charts/${chartId}`, {
-      name: chartState.name,
-    });
-
+  const closeTitleInput = () => {
     chartTitleRef.current?.replaceChildren(
-      <div id={`${chartId}-chart-title-display`} class="text-title" onclick={handleChangeTitleClick}>
-        {chartState.name}
-      </div>
+      <>
+        <div id={`${chartId}-chart-title-display`} class="text-title">
+          {chartState.name}
+        </div>
+        <div onclick={handleChangeTitleClick} class="cursor-pointer">
+          ✏️
+        </div>
+      </>
     );
-
-    document.removeEventListener('click', handleDocumentClick);
   };
 
-  const handleDocumentClick = (e: MouseEvent) => {
-    const wrapper = inputWrapperRef.current;
+  const handleChangeTitle = () => {
+    void (async () => {
+      await api
+        .patch(`/canvas/charts/${chartId}`, {
+          name: chartState.name,
+        })
+        .then(res => {
+          openToastMessage({ dom: toastLayerRef.current, type: 'success', message: res.message });
+        });
+    })();
 
-    if (!wrapper) return;
-
-    const target = e.target as Node;
-
-    const isOutside = !wrapper.contains(target);
-
-    if (isOutside) {
-      void closeTitleInput();
-    }
+    closeTitleInput();
   };
 
   const handleChangeTitleClick = () => {
     chartTitleRef.current?.replaceChildren(
-      <div ref={inputWrapperRef}>
+      <div ref={inputWrapperRef} class="flex items-center gap-2">
         <Input
           id={`${chartId}-chart-title-input`}
-          style="h-12"
+          style="h-10"
           value={chartState.name ?? ''}
           onInput={(e: Event) => {
             const target = e.target as HTMLInputElement;
-
             chartState.name = target.value;
           }}
         />
+        <div class="h-10 w-20">
+          <Button label="저장" color="primary" onClick={handleChangeTitle} />
+        </div>
       </div>
     );
-
-    setTimeout(() => {
-      document.addEventListener('click', handleDocumentClick);
-    });
   };
 
   return (
@@ -228,9 +189,12 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
         }}
       >
         <div class="flex min-w-0 flex-1 flex-col p-10">
-          <div ref={chartTitleRef}>
-            <div id={`${chartId}-chart-title-display`} class="text-title" onclick={handleChangeTitleClick}>
+          <div ref={chartTitleRef} class="flex items-center gap-2">
+            <div id={`${chartId}-chart-title-display`} class="text-title">
               {chartState.name}
+            </div>
+            <div onclick={handleChangeTitleClick} class="cursor-pointer">
+              ✏️
             </div>
           </div>
           <div ref={chartContainerRef} class="relative mt-4 h-full min-w-0 overflow-hidden">
