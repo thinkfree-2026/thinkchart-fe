@@ -1,10 +1,8 @@
-import { api, type ApiResponse } from '../../api/http.ts';
-import { ChartModal } from '../../chart/components/index.ts';
-import { chartDataStore } from '../../chart/store/chartDataStore.ts';
-import { chartStore } from '../../chart/store/index.ts';
-import { modalRoot } from '../../main.ts';
-import { chartListState } from '../../store/chartListStore.ts';
-import type { Chart } from '../../types/api/chartAPI.ts';
+import { api } from '../../api/http.ts';
+import { openChartModal } from '../../chart/utils/openChartModal.tsx';
+import { toastRoot } from '../../main.ts';
+import { chartListState } from '../../store/index.ts';
+import { openToastMessage } from '../common/Toast.tsx';
 
 type ChartItemProps = {
   id: string;
@@ -16,22 +14,7 @@ export const ChartItem = ({ id, label }: ChartItemProps) => {
     if (chartListState.activeId === id) return;
     chartListState.activeId = id;
 
-    const res: ApiResponse<Chart> = await api.get(`/canvas/charts/${id}`);
-
-    const { state: chartDataState } = chartDataStore;
-    const { state: chartState } = chartStore;
-
-    const circles = res.data.circles;
-    chartDataState.data = circles.map(circle => ({
-      ...circle,
-      isActive: false,
-    }));
-
-    chartState.xAxisName = res.data.xaxis;
-    chartState.yAxisName = res.data.yaxis;
-    chartState.name = res.data.name;
-
-    modalRoot.replaceChildren(<ChartModal chartId={id} />);
+    await openChartModal(id);
   };
 
   const handleDeleteClick = async (e: MouseEvent) => {
@@ -43,7 +26,9 @@ export const ChartItem = ({ id, label }: ChartItemProps) => {
       chartListState.activeId = null;
     }
 
-    await api.delete(`/canvas/charts/${id}`);
+    await api.delete(`/canvas/charts/${id}`).then(res => {
+      openToastMessage({ dom: toastRoot, type: 'success', message: res.message });
+    });
   };
 
   return (
@@ -62,7 +47,7 @@ export const ChartItem = ({ id, label }: ChartItemProps) => {
       <span>{label}</span>
       <button
         type="button"
-        class="text-gray-400 opacity-0 transition group-hover:opacity-100 hover:text-red-500"
+        class="cursor-pointer text-gray-400 opacity-0 transition group-hover:opacity-100 hover:text-red-500"
         onclick={handleDeleteClick}
         aria-label="Delete Chart"
       >

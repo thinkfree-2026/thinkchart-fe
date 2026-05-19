@@ -1,4 +1,6 @@
 import { api, type ApiResponse } from '../api/http.ts';
+import { openChartModal } from '../chart/utils/openChartModal.tsx';
+import type { ChartListItem } from '../types';
 import { createRef } from '../utils/index.ts';
 
 import { CIRCLE_RADIUS, MAX_RADIUS, RADIUS_RATIO } from './constants/index.ts';
@@ -24,7 +26,7 @@ export const Canvas = () => {
     }
   };
 
-  const handleChartButtonClick = () => {
+  const handleChartButtonClick = async () => {
     const circles = circleStore.getCircles();
     const { selectedIndices } = selectionStore.state.selection;
 
@@ -36,14 +38,14 @@ export const Canvas = () => {
 
     const selectedIds = selectedIndices.map(index => circles[index].id);
 
-    api.post('/canvas/charts', { circleIds: selectedIds }).catch(error => {
-      console.error(error);
-    });
+    const res: ApiResponse<ChartListItem> = await api.post('/canvas/charts', { circleIds: selectedIds });
 
     if (!chartButtonRef.current) return;
 
     selectionStore.setUnselect();
     chartButtonRef.current.style.display = 'none';
+
+    await openChartModal(res.data.id);
   };
 
   const initializeCallback = async (canvasElement: HTMLCanvasElement) => {

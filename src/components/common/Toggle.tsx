@@ -37,7 +37,7 @@ export const Toggle = ({ id, checked = false, onChange }: ToggleProps) => {
       role="switch"
       aria-checked={isChecked}
       onclick={handleToggleClick}
-      class={`${isChecked ? 'bg-primary' : 'bg-zinc-300'} relative inline-flex h-5 w-9 rounded-full transition-colors duration-200`}
+      class={`${isChecked ? 'bg-primary' : 'bg-zinc-300'} relative inline-flex h-5 w-9 cursor-pointer rounded-full transition-colors duration-200`}
     >
       <span
         ref={thumbRef}

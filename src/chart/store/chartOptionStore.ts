@@ -1,15 +1,15 @@
 import { createStore } from '../../utils/index.ts';
 
 export const dataSettingsStore = createStore({
-  showDataValues: false,
-  showPercentage: false,
-  showSum: false,
+  showDataValues: true,
+  showPercentage: true,
+  showSum: true,
 });
 
 export const chartStore = createStore({
   name: '',
-  showXAxisName: false,
+  showXAxisName: true,
   xAxisName: '',
-  showYAxisName: false,
+  showYAxisName: true,
   yAxisName: '',
 });
