@@ -1,5 +1,5 @@
 import { api } from '../../api/http.ts';
-import { Button, Input, Toggle } from '../../components/index.ts';
+import { Button, Input, openToastMessage, Toggle } from '../../components/index.ts';
 import { chartStore, dataSettingsStore } from '../store/index.ts';
 
 import { FieldRow } from './FieldRow.tsx';
@@ -15,10 +15,14 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
 
   const onClickedChangeChart = () => {
     void (async () => {
-      await api.patch(`/canvas/charts/${chartId}`, {
-        xAxis: chartState.xAxisName,
-        yAxis: chartState.yAxisName,
-      });
+      await api
+        .patch(`/canvas/charts/${chartId}`, {
+          xAxis: chartState.xAxisName,
+          yAxis: chartState.yAxisName,
+        })
+        .then(res => {
+          openToastMessage({ type: 'success', message: res.message });
+        });
     })();
   };
 
