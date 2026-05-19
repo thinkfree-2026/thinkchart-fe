@@ -1,4 +1,6 @@
 import { api, type ApiResponse } from '../api/http.ts';
+import { openChartModal } from '../chart/utils/openChartModal.tsx';
+import type { ChartListItem } from '../types';
 import { createRef } from '../utils/index.ts';
 
 import { CIRCLE_RADIUS, CIRCLE_VALUE } from './constants/index.ts';
@@ -6,8 +8,6 @@ import { renderCanvas } from './renderer/index.ts';
 import { circleStore, selectionStore } from './store/index.ts';
 import { setupInteraction } from './tools/index.ts';
 import type { Circle } from './types/index.ts';
-import type { ChartListItem } from '../types';
-import { openChartModal } from '../chart/utils/openChartModal.tsx';
 
 export const Canvas = () => {
   const cleanupTasks: Array<() => void> = [];
