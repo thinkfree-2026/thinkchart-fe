@@ -44,7 +44,7 @@ export const ChartItem = ({ id, label }: ChartItemProps) => {
       <span>{label}</span>
       <button
         type="button"
-        class="text-gray-400 opacity-0 transition group-hover:opacity-100 hover:text-red-500"
+        class="cursor-pointer text-gray-400 opacity-0 transition group-hover:opacity-100 hover:text-red-500"
         onclick={handleDeleteClick}
         aria-label="Delete Chart"
       >
