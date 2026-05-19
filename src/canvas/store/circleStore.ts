@@ -40,6 +40,13 @@ const createCircleStore = () => {
         state.version += 1;
       }
     },
+    updateCircleSize: (index: number, radius: number, value: number) => {
+      if (index >= 0 && index < state.circles.length) {
+        state.circles[index].radius = radius;
+        state.circles[index].value = value;
+        state.version += 1;
+      }
+    },
     updateCircleId: (tempId: string, id: string) => {
       const index = state.circles.findIndex(circle => circle.id === tempId);
 

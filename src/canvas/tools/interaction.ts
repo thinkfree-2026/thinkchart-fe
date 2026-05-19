@@ -62,6 +62,41 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     }
   );
 
+  let isCircleResizing = false;
+  let resizeHandle: 'nw' | 'ne' | 'sw' | 'se' | null = null;
+  let resizingCircleIndex = -1;
+  let initialDragDistance = 0;
+  let initialCircleValue = 0;
+  const HANDLE_SIZE = 10;
+
+  // 꼭짓점 충돌 감지
+  const checkVertexHit = (worldX: number, worldY: number, scale: number) => {
+    const { selectedIndices } = selectionStore.state.selection;
+    if (selectedIndices.length !== 1) return null;
+
+    const index = selectedIndices[0];
+    const circle = circleStore.getCircles()[index];
+
+    if (circle == null || circle.chartId !== null) return null;
+
+    const radius = circle.radius;
+    const hitTolerance = (HANDLE_SIZE / scale) * 1.5;
+
+    const corners = {
+      nw: { x: circle.x - radius, y: circle.y - radius },
+      ne: { x: circle.x + radius, y: circle.y - radius },
+      sw: { x: circle.x - radius, y: circle.y + radius },
+      se: { x: circle.x + radius, y: circle.y + radius },
+    };
+
+    for (const [key, pos] of Object.entries(corners)) {
+      if (Math.abs(worldX - pos.x) <= hitTolerance && Math.abs(worldY - pos.y) <= hitTolerance) {
+        return { handle: key as 'nw' | 'ne' | 'sw' | 'se', index };
+      }
+    }
+    return null;
+  };
+
   // 이동중인 원의 테두리가 화면 끝에 도달할 경우 카메라를 이동시키는 로직
   const updateAutoCameraPanning = () => {
     if (!isCircleDragging) return;
@@ -181,7 +216,8 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     selectionStore.setHover(hoveredIndex);
 
     const isOverCircle = hoveredIndex !== -1;
-    const shouldShowGuide = !isCameraDragging && !isCircleDragging && !isRightClickDragging && !isOverCircle;
+    const shouldShowGuide =
+      !isCameraDragging && !isCircleDragging && !isCircleResizing && !isRightClickDragging && !isOverCircle;
 
     if (!shouldShowGuide) {
       guideCircleStore.hide();
@@ -304,7 +340,21 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       const worldPosition = screenToWorld(e.clientX, e.clientY, camera);
       const hoveredIndex = getUnlockedCircleIndex(worldPosition.x, worldPosition.y);
 
-      const { selectedIndices } = selectionStore.state.selection;
+      const hitInfo = checkVertexHit(worldPosition.x, worldPosition.y, camera.scale);
+      if (hitInfo) {
+        isCircleResizing = true;
+        resizeHandle = hitInfo.handle;
+        resizingCircleIndex = hitInfo.index;
+
+        const circle = circleStore.getCircles()[hitInfo.index];
+        const dx = Math.abs(worldPosition.x - circle.x);
+        const dy = Math.abs(worldPosition.y - circle.y);
+
+        initialDragDistance = Math.max(dx, dy);
+        initialCircleValue = circle.value;
+
+        return;
+      }
 
       // 캔버스 빈 공간 클릭
       if (hoveredIndex === -1) {
@@ -313,6 +363,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
         return;
       }
 
+      const { selectedIndices } = selectionStore.state.selection;
       // Ctrl+좌클릭 시 선택된 원에 추가 및 삭제
       if (e.ctrlKey) {
         if (!selectedIndices.includes(hoveredIndex)) {
@@ -402,6 +453,38 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       }
     }
 
+    // 꼭짓점 호버 시 커서 변경
+    if (!isCameraDragging && !isCircleDragging && !isRightClickDragging && !isCircleResizing) {
+      const hitInfo = checkVertexHit(currentWorldPosition.x, currentWorldPosition.y, camera.scale);
+      if (hitInfo) {
+        canvas.style.cursor = hitInfo.handle === 'nw' || hitInfo.handle === 'se' ? 'nwse-resize' : 'nesw-resize';
+      } else {
+        canvas.style.cursor = isSpacePressed ? 'grab' : "url('/cursor-black.png'), auto";
+      }
+    }
+
+    // 꼭짓점 클릭 후 드래그 시 크기 변경
+    if (isCircleResizing && resizingCircleIndex !== -1) {
+      const circle = circleStore.getCircles()[resizingCircleIndex];
+      const dx = Math.abs(currentWorldPosition.x - circle.x);
+      const dy = Math.abs(currentWorldPosition.y - circle.y);
+      const currentDistance = Math.max(dx, dy);
+      const distanceDelta = currentDistance - initialDragDistance;
+      const tempRadius = CIRCLE_RADIUS * Math.sqrt(initialCircleValue / RADIUS_RATIO);
+      const newVirtualRadius = tempRadius + distanceDelta;
+
+      let newValue = Math.round(RADIUS_RATIO * Math.pow(newVirtualRadius / CIRCLE_RADIUS, 2));
+      newValue = Math.max(1, newValue);
+
+      let finalRadius = CIRCLE_RADIUS * Math.sqrt(newValue / RADIUS_RATIO);
+      finalRadius = Math.min(finalRadius, MAX_RADIUS);
+
+      circleStore.updateCircleSize(resizingCircleIndex, finalRadius, newValue);
+
+      canvas.style.cursor = resizeHandle === 'nw' || resizeHandle === 'se' ? 'nwse-resize' : 'nesw-resize';
+      // return;
+    }
+
     if (isRightClickDragging) {
       // 우클릭 드래그 시 지나가는 원들을 연속으로 배열에 추가
       const hoveredIndex = getUnlockedCircleIndex(currentWorldPosition.x, currentWorldPosition.y);
@@ -438,6 +521,15 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       }
 
       updateGuideCircleState();
+      return;
+    }
+
+    if (isCircleResizing) {
+      isCircleResizing = false;
+      resizeHandle = null;
+      canvas.style.cursor = isSpacePressed ? 'grab' : "url('/cursor-black.png'), auto";
+
+      resizingCircleIndex = -1;
       return;
     }
 
