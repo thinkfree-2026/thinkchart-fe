@@ -57,19 +57,22 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     const hoveredChartId = chartListState.hoveredChartId;
 
     if (hoveredChartId !== null) {
-      const chartGroups = new Map<string, Circle[]>();
+      const chartsMap = new Map<string, Circle[]>();
 
       circles.forEach(circle => {
         if (circle.chartId === hoveredChartId) {
-          if (!chartGroups.has(circle.chartId)) {
-            chartGroups.set(circle.chartId, []);
+          const charts = chartsMap.get(circle.chartId);
+
+          if (charts) {
+            charts.push(circle);
+          } else {
+            chartsMap.set(circle.chartId, [circle]);
           }
-          chartGroups.get(circle.chartId)!.push(circle);
         }
       });
 
-      if (chartGroups.size > 0) {
-        drawConnection(ctx, chartGroups);
+      if (chartsMap.size > 0) {
+        drawConnection(ctx, chartsMap);
       }
     }
 

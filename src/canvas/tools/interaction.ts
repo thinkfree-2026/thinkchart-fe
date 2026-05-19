@@ -155,15 +155,17 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
     if (index === -1) {
       chartListState.activeId = null;
+      return -1;
     }
 
-    if (index !== -1) {
-      const circles = circleStore.getCircles();
-      if (circles[index].chartId !== null) {
-        chartListState.activeId = circles[index].chartId;
-        return -1;
-      }
+    const circles = circleStore.getCircles();
+    const chartId = circles[index].chartId;
+    if (chartId !== null) {
+      chartListState.activeId = chartId;
+      return -1;
     }
+
+    chartListState.activeId = null;
 
     return index;
   };
@@ -487,6 +489,8 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
         } catch (error) {
           window.alert(error);
           circleStore.deleteCircle(tempId);
+          selectionStore.setUnselect();
+          updateGuideCircleState();
         }
       };
 
