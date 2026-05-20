@@ -1,6 +1,5 @@
 import { api } from '../../api/http.ts';
-import { openToastMessage } from '../../components/common/Toast.tsx';
-import { Button, Input, Modal, Popover, toastLayerRef } from '../../components/index.ts';
+import { Modal, Popover } from '../../components/index.ts';
 import { handleCharModalSocketMessage } from '../../sockets/chartModalSocketHandler.ts';
 import { chartSocket } from '../../sockets/index.ts';
 import { createRef } from '../../utils/index.ts';
@@ -15,13 +14,12 @@ type ChartModalProps = {
 };
 
 export const chartControlsRef = createRef<{ redraw: () => void } | null>(null);
+export const chartTitleRef = createRef<HTMLDivElement>(null);
 
 export const ChartModal = ({ chartId }: ChartModalProps) => {
   const { state: chartDataState } = chartDataStore;
   const { state: chartState } = chartStore;
 
-  const chartTitleRef = createRef<HTMLDivElement>(null);
-  const inputWrapperRef = createRef<HTMLDivElement>(null);
   const chartContainerRef = createRef<HTMLDivElement>(null);
   const popoverLayerRef = createRef<HTMLDivElement>(null);
   const selectedBarRef = createRef<PopoverInfo | null>(null);
@@ -112,64 +110,14 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
           }}
           onSave={() => {
             void (async () => {
-              await api
-                .patch(`/canvas/charts/${targetData.chartId}/${targetData.id}`, {
-                  name: targetData.name,
-                  value: targetData.value,
-                  // opacity: targetData.opacity > 1 ? targetData.opacity / 100 : targetData.opacity,
-                })
-                .then(res => {
-                  openToastMessage({ dom: toastLayerRef.current, type: 'success', message: res.message });
-                });
+              await api.patch(`/canvas/charts/${targetData.chartId}/${targetData.id}`, {
+                name: targetData.name,
+                value: targetData.value,
+                // opacity: targetData.opacity > 1 ? targetData.opacity / 100 : targetData.opacity,
+              });
             })();
           }}
         />
-      </div>
-    );
-  };
-
-  const closeTitleInput = () => {
-    chartTitleRef.current?.replaceChildren(
-      <>
-        <div id={`${chartId}-chart-title-display`} class="text-title">
-          {chartState.name}
-        </div>
-        <div onclick={handleChangeTitleClick} class="cursor-pointer">
-          ✏️
-        </div>
-      </>
-    );
-  };
-
-  const handleChangeTitle = () => {
-    void (async () => {
-      await api
-        .patch(`/canvas/charts/${chartId}`, {
-          name: chartState.name,
-        })
-        .then(res => {
-          openToastMessage({ dom: toastLayerRef.current, type: 'success', message: res.message });
-        });
-    })();
-
-    closeTitleInput();
-  };
-
-  const handleChangeTitleClick = () => {
-    chartTitleRef.current?.replaceChildren(
-      <div ref={inputWrapperRef} class="flex items-center gap-2">
-        <Input
-          id={`${chartId}-chart-title-input`}
-          style="h-10"
-          value={chartState.name ?? ''}
-          onInput={(e: Event) => {
-            const target = e.target as HTMLInputElement;
-            chartState.name = target.value;
-          }}
-        />
-        <div class="h-10 w-20">
-          <Button label="저장" color="primary" onClick={handleChangeTitle} />
-        </div>
       </div>
     );
   };
@@ -189,13 +137,8 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
         }}
       >
         <div class="flex min-w-0 flex-1 flex-col p-10">
-          <div ref={chartTitleRef} class="flex items-center gap-2">
-            <div id={`${chartId}-chart-title-display`} class="text-title">
-              {chartState.name}
-            </div>
-            <div onclick={handleChangeTitleClick} class="cursor-pointer">
-              ✏️
-            </div>
+          <div ref={chartTitleRef} class="text-title">
+            {chartState.name}
           </div>
           <div ref={chartContainerRef} class="relative mt-4 h-full min-w-0 overflow-hidden">
             <BarChart
