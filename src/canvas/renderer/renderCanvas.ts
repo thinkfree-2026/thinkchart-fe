@@ -116,18 +116,19 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
             true,
             BASE_THICKNESS,
             true,
-            isHoveringSelected ? BASE_THICKNESS * 2 : BASE_THICKNESS
+            isHoveringSelected ? BASE_THICKNESS * 2 : BASE_THICKNESS,
+            selectedIndices.length === 1
           );
         }
       });
     }
 
     // 커서 렌더링
-    const { userId } = userStore.state;
+    const { userId, color } = userStore.state;
     const cursors = cursorStore.getCursors();
     cursors.forEach(cursor => {
-      if (cursor.id !== userId) {
-        drawCursor(ctx, cursor);
+      if (cursor.id !== userId && color != null) {
+        drawCursor(ctx, camera.scale, cursor);
       }
     });
   };

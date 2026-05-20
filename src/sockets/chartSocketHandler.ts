@@ -1,3 +1,4 @@
+import { CIRCLE_RADIUS, MAX_RADIUS, RADIUS_RATIO } from '../canvas/constants/index.ts';
 import { circleStore } from '../canvas/store/index.ts';
 import { chartTitleRef } from '../chart/components/index.ts';
 import { chartStore } from '../chart/store/index.ts';
@@ -16,6 +17,13 @@ export type ChartSocketMessage =
       payload: {
         circleIds: string[];
         id: string;
+      };
+    }
+  | {
+      action: 'CHART_BAR_UPDATED';
+      payload: {
+        id: string;
+        value: number;
       };
     };
 
@@ -86,6 +94,16 @@ export const handleChartSocketMessage = (message: ChartSocketMessage) => {
 
       chartListState.charts = chartListState.charts.filter(chart => chart.id !== message.payload.id);
 
+      break;
+    }
+
+    case 'CHART_BAR_UPDATED': {
+      const index = circleStore.getCircles().findIndex(circle => circle.id === message.payload.id);
+      const value = message.payload.value;
+      const baseRadius = CIRCLE_RADIUS * Math.sqrt(value / RADIUS_RATIO);
+      const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
+
+      circleStore.updateCircleSize(index, clampedRadius, value);
       break;
     }
   }

@@ -62,6 +62,41 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     }
   );
 
+  let isCircleResizing = false;
+  let resizeHandle: 'nw' | 'ne' | 'sw' | 'se' | null = null;
+  let resizingCircleIndex = -1;
+  let initialDragDistance = 0;
+  let initialCircleValue = 0;
+  const HANDLE_SIZE = 10;
+
+  // 꼭짓점 충돌 감지
+  const checkVertexHit = (worldX: number, worldY: number, scale: number) => {
+    const { selectedIndices } = selectionStore.state.selection;
+    if (selectedIndices.length !== 1) return null;
+
+    const index = selectedIndices[0];
+    const circle = circleStore.getCircles()[index];
+
+    if (circle == null || circle.chartId !== null) return null;
+
+    const radius = circle.radius;
+    const hitTolerance = (HANDLE_SIZE / scale) * 1.5;
+
+    const corners = {
+      nw: { x: circle.x - radius, y: circle.y - radius },
+      ne: { x: circle.x + radius, y: circle.y - radius },
+      sw: { x: circle.x - radius, y: circle.y + radius },
+      se: { x: circle.x + radius, y: circle.y + radius },
+    };
+
+    for (const [key, pos] of Object.entries(corners)) {
+      if (Math.abs(worldX - pos.x) <= hitTolerance && Math.abs(worldY - pos.y) <= hitTolerance) {
+        return { handle: key as 'nw' | 'ne' | 'sw' | 'se', index };
+      }
+    }
+    return null;
+  };
+
   // 이동중인 원의 테두리가 화면 끝에 도달할 경우 카메라를 이동시키는 로직
   const updateAutoCameraPanning = () => {
     if (!isCircleDragging) return;
@@ -82,11 +117,11 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     let maxScreenY = -Infinity;
 
     selectedIndices.forEach(selectedIndex => {
-      const targetCircle = circles[selectedIndex];
+      const selectedCircle = circles[selectedIndex];
       // 월드 좌표 기반의 원 위치를 현재 카메라 배율이 반영된 화면 픽셀 좌표로 변환
-      const screenX = targetCircle.x * camera.scale + camera.x;
-      const screenY = targetCircle.y * camera.scale + camera.y;
-      const screenRadius = targetCircle.radius * camera.scale;
+      const screenX = selectedCircle.x * camera.scale + camera.x;
+      const screenY = selectedCircle.y * camera.scale + camera.y;
+      const screenRadius = selectedCircle.radius * camera.scale;
 
       minScreenX = Math.min(minScreenX, screenX - screenRadius);
       maxScreenX = Math.max(maxScreenX, screenX + screenRadius);
@@ -119,11 +154,11 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
       // 다중 원 이동
       selectedIndices.forEach(selectedIndex => {
-        const targetCircle = circles[selectedIndex];
+        const selectedCircle = circles[selectedIndex];
         circleStore.updateCirclePosition(
           selectedIndex,
-          targetCircle.x - panSpeedX / camera.scale,
-          targetCircle.y - panSpeedY / camera.scale
+          selectedCircle.x - panSpeedX / camera.scale,
+          selectedCircle.y - panSpeedY / camera.scale
         );
       });
 
@@ -181,7 +216,8 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     selectionStore.setHover(hoveredIndex);
 
     const isOverCircle = hoveredIndex !== -1;
-    const shouldShowGuide = !isCameraDragging && !isCircleDragging && !isRightClickDragging && !isOverCircle;
+    const shouldShowGuide =
+      !isCameraDragging && !isCircleDragging && !isCircleResizing && !isRightClickDragging && !isOverCircle;
 
     if (!shouldShowGuide) {
       guideCircleStore.hide();
@@ -304,7 +340,21 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       const worldPosition = screenToWorld(e.clientX, e.clientY, camera);
       const hoveredIndex = getUnlockedCircleIndex(worldPosition.x, worldPosition.y);
 
-      const { selectedIndices } = selectionStore.state.selection;
+      const hitInfo = checkVertexHit(worldPosition.x, worldPosition.y, camera.scale);
+      if (hitInfo) {
+        isCircleResizing = true;
+        resizeHandle = hitInfo.handle;
+        resizingCircleIndex = hitInfo.index;
+
+        const circle = circleStore.getCircles()[hitInfo.index];
+        const dx = Math.abs(worldPosition.x - circle.x);
+        const dy = Math.abs(worldPosition.y - circle.y);
+
+        initialDragDistance = Math.max(dx, dy);
+        initialCircleValue = circle.value;
+
+        return;
+      }
 
       // 캔버스 빈 공간 클릭
       if (hoveredIndex === -1) {
@@ -313,6 +363,7 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
         return;
       }
 
+      const { selectedIndices } = selectionStore.state.selection;
       // Ctrl+좌클릭 시 선택된 원에 추가 및 삭제
       if (e.ctrlKey) {
         if (!selectedIndices.includes(hoveredIndex)) {
@@ -350,12 +401,12 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   };
 
   const updateCursor = throttle(
-    (id: string, x: number, y: number) =>
+    (id: string, x: number, y: number, color: '1' | '2' | '3') =>
       canvasSocket.sendCursorPosition({
         id,
         x,
         y,
-        color: '#000000',
+        color,
       }),
     10
   );
@@ -371,15 +422,18 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     currentMousePosition.x = e.clientX;
     currentMousePosition.y = e.clientY;
 
-    const { userId } = userStore.state;
-    updateCursor(userId, currentWorldPosition.x, currentWorldPosition.y);
+    const { userId, color } = userStore.state;
 
-    cursorStore.setCursor({
-      id: userId,
-      x: currentWorldPosition.x,
-      y: currentWorldPosition.y,
-      color: '#000000',
-    });
+    if (userId != null && color != null) {
+      updateCursor(userId, currentWorldPosition.x, currentWorldPosition.y, color);
+
+      cursorStore.setCursor({
+        id: userId,
+        x: currentWorldPosition.x,
+        y: currentWorldPosition.y,
+        color,
+      });
+    }
 
     if (isCameraDragging) {
       cameraStore.pan(e.movementX, e.movementY);
@@ -396,10 +450,42 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
         // 선택된 모든 원 좌표 갱신
         selectedIndices.forEach(index => {
-          const targetCircle = circles[index];
-          circleStore.updateCirclePosition(index, targetCircle.x + deltaWorldX, targetCircle.y + deltaWorldY);
+          const selectedCircle = circles[index];
+          circleStore.updateCirclePosition(index, selectedCircle.x + deltaWorldX, selectedCircle.y + deltaWorldY);
         });
       }
+    }
+
+    // 꼭짓점 호버 시 커서 변경
+    if (!isCameraDragging && !isCircleDragging && !isRightClickDragging && !isCircleResizing) {
+      const hitInfo = checkVertexHit(currentWorldPosition.x, currentWorldPosition.y, camera.scale);
+      if (hitInfo) {
+        canvas.style.cursor = hitInfo.handle === 'nw' || hitInfo.handle === 'se' ? 'nwse-resize' : 'nesw-resize';
+      } else {
+        canvas.style.cursor = isSpacePressed ? 'grab' : "url('/cursor-black.png'), auto";
+      }
+    }
+
+    // 꼭짓점 클릭 후 드래그 시 크기 변경
+    if (isCircleResizing && resizingCircleIndex !== -1) {
+      const circle = circleStore.getCircles()[resizingCircleIndex];
+      const dx = Math.abs(currentWorldPosition.x - circle.x);
+      const dy = Math.abs(currentWorldPosition.y - circle.y);
+      const currentDistance = Math.max(dx, dy);
+      const distanceDelta = currentDistance - initialDragDistance;
+      const tempRadius = CIRCLE_RADIUS * Math.sqrt(initialCircleValue / RADIUS_RATIO);
+      const newTempRadius = tempRadius + distanceDelta;
+
+      let newValue = Math.round(RADIUS_RATIO * Math.pow(newTempRadius / CIRCLE_RADIUS, 2));
+      newValue = Math.max(1, newValue);
+
+      let finalRadius = CIRCLE_RADIUS * Math.sqrt(newValue / RADIUS_RATIO);
+      finalRadius = Math.min(finalRadius, MAX_RADIUS);
+
+      circleStore.updateCircleSize(resizingCircleIndex, finalRadius, newValue);
+
+      canvas.style.cursor = resizeHandle === 'nw' || resizeHandle === 'se' ? 'nwse-resize' : 'nesw-resize';
+      // return;
     }
 
     if (isRightClickDragging) {
@@ -425,6 +511,22 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       isCircleDragging = false;
       stopAutoCameraPanning();
 
+      const { selectedIndices } = selectionStore.state.selection;
+
+      if (selectedIndices.length > 0) {
+        const circles = circleStore.getCircles();
+        const selectedCircles: { id: string; x: number; y: number }[] = [];
+
+        selectedIndices.forEach(index => {
+          const circle = circles[index];
+          const selectedCircle = { id: circle.id, x: circle.x, y: circle.y };
+
+          selectedCircles.push(selectedCircle);
+        });
+
+        api.patch(`/canvas/circles`, selectedCircles).catch(error => console.error(error));
+      }
+
       // 좌클릭으로 제자리에서 눌렀다 뗀 경우
       if (e.button === 0 && !hasMovedDuringClick) {
         const { camera } = cameraStore.state;
@@ -438,6 +540,24 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       }
 
       updateGuideCircleState();
+      return;
+    }
+
+    if (isCircleResizing) {
+      isCircleResizing = false;
+      resizeHandle = null;
+      canvas.style.cursor = isSpacePressed ? 'grab' : "url('/cursor-black.png'), auto";
+
+      const circle = circleStore.getCircles()[resizingCircleIndex];
+      if (circle != null) {
+        api
+          .patch(`/canvas/circles/${circle.id}`, {
+            value: circle.value,
+          })
+          .catch(error => console.error(error));
+      }
+
+      resizingCircleIndex = -1;
       return;
     }
 
@@ -464,16 +584,18 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
       const tempId = crypto.randomUUID();
 
-      circleStore.addCircle({
-        userId,
-        id: tempId,
-        chartId: null,
-        x: worldPosition.x,
-        y: worldPosition.y,
-        value,
-        radius: clampedRadius,
-        color: CIRCLE_COLOR,
-      });
+      if (userId != null) {
+        circleStore.addCircle({
+          userId,
+          id: tempId,
+          chartId: null,
+          x: worldPosition.x,
+          y: worldPosition.y,
+          value,
+          radius: clampedRadius,
+          color: CIRCLE_COLOR,
+        });
+      }
 
       const addCircle = async () => {
         try {
@@ -515,7 +637,10 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     stopBrushAnimation();
 
     const { userId } = userStore.state;
-    cursorStore.deleteCursor(userId);
+
+    if (userId != null) {
+      cursorStore.deleteCursor(userId);
+    }
   };
 
   const onWheel = (e: WheelEvent) => {

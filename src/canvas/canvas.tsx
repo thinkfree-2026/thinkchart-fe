@@ -3,7 +3,7 @@ import { openChartModal } from '../chart/utils/openChartModal.tsx';
 import type { ChartListItem } from '../types';
 import { createRef } from '../utils/index.ts';
 
-import { CIRCLE_RADIUS, CIRCLE_VALUE } from './constants/index.ts';
+import { CIRCLE_RADIUS, MAX_RADIUS, RADIUS_RATIO } from './constants/index.ts';
 import { renderCanvas } from './renderer/index.ts';
 import { circleStore, selectionStore } from './store/index.ts';
 import { setupInteraction } from './tools/index.ts';
@@ -52,9 +52,13 @@ export const Canvas = () => {
     const res: ApiResponse<Circle[]> = await api.get('/canvas/circles');
 
     res.data.forEach(circle => {
+      const value = circle.value;
+      const baseRadius = CIRCLE_RADIUS * Math.sqrt(value / RADIUS_RATIO);
+      const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
+
       circleStore.addCircle({
         ...circle,
-        radius: CIRCLE_RADIUS * Math.sqrt(circle.value / CIRCLE_VALUE),
+        radius: clampedRadius,
       });
     });
 
