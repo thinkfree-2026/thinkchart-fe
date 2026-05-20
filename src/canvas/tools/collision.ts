@@ -11,13 +11,13 @@ export const getHoveredCircleIndex = (worldX: number, worldY: number) => {
     const deltaY = worldY - circle.y;
     const radius = circle.radius;
 
-    // if (deltaX * deltaX + deltaY * deltaY <= radius * radius) {
-    //   return index;
-    // }
-
-    if (Math.abs(deltaX) <= radius && Math.abs(deltaY) <= radius) {
+    if (deltaX * deltaX + deltaY * deltaY <= radius * radius) {
       return index;
     }
+
+    // if (Math.abs(deltaX) <= radius && Math.abs(deltaY) <= radius) {
+    //   return index;
+    // }
   }
 
   return -1;
