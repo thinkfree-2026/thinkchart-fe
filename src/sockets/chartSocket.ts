@@ -1,3 +1,5 @@
+import type { ChartListItem } from '../types/index.ts';
+
 import { websocketClient } from './stompClient.ts';
 
 import type { StompSubscription } from '@stomp/stompjs';
@@ -19,6 +21,10 @@ type ChartSocketMessage =
   | {
       action: 'CHART_BAR_DELETED';
       payload: string;
+    }
+  | {
+      action: 'CHART_UPDATED';
+      payload: ChartListItem;
     };
 
 export const chartSocket = {

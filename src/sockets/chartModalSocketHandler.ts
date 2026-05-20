@@ -46,6 +46,16 @@ export const handleCharModalSocketMessage = (chartId: string) => {
 
         break;
       }
+      case 'CHART_UPDATED': {
+        if (toastLayerRef.current) {
+          openToastMessage({
+            dom: toastLayerRef.current,
+            type: 'success',
+            message: '차트가 수정되었습니다.',
+          });
+        }
+        break;
+      }
       default:
         break;
     }
