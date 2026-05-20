@@ -1,5 +1,6 @@
 import { api } from '../../api/http.ts';
-import { Modal, Popover } from '../../components/index.ts';
+import { openToastMessage } from '../../components/common/Toast.tsx';
+import { Modal, Popover, toastLayerRef } from '../../components/index.ts';
 import { handleCharModalSocketMessage } from '../../sockets/chartModalSocketHandler.ts';
 import { chartSocket } from '../../sockets/index.ts';
 import { createRef } from '../../utils/index.ts';
@@ -82,7 +83,6 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
           id={`${chartId}-bar-popover`}
           label={targetData.name}
           value={targetData.value}
-          // opacity={targetData.opacity ?? 100}
           onNameInput={(nextName: string) => {
             targetData.name = nextName;
 
@@ -92,11 +92,17 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
             targetData.value = nextValue;
             chartControlsRef.current?.redraw();
           }}
-          // onOpacityInput={(nextOpacity: number) => {
-          //   targetData.opacity = nextOpacity;
-          //   chartControlsRef.current?.redraw();
-          // }}
           onDelete={() => {
+            if (chartDataState.data.length <= 2) {
+              openToastMessage({
+                dom: toastLayerRef.current,
+                type: 'error',
+                message: '차트 데이터를 삭제할 수 없습니다.',
+                description: '차트 데이터는 2개 이상 존재해야 합니다.',
+              });
+              return;
+            }
+
             const targetIndex = chartDataState.data.findIndex(data => data.id === targetData.id);
             if (targetIndex !== -1) {
               chartDataState.data.splice(targetIndex, 1);
