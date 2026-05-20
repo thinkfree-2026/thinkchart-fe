@@ -89,7 +89,9 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
             chartControlsRef.current?.redraw();
           }}
           onValueInput={(nextValue: number) => {
-            targetData.value = nextValue;
+            if (!nextValue) targetData.value = 1;
+            else targetData.value = nextValue;
+
             chartControlsRef.current?.redraw();
           }}
           onDelete={() => {
