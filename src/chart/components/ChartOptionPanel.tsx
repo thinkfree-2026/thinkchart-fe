@@ -1,6 +1,5 @@
 import { api } from '../../api/http.ts';
-import { openToastMessage } from '../../components/common/Toast.tsx';
-import { Button, Input, toastLayerRef, Toggle } from '../../components/index.ts';
+import { Button, Input, Toggle } from '../../components/index.ts';
 import { chartStore, dataSettingsStore } from '../store/index.ts';
 
 import { FieldRow } from './FieldRow.tsx';
@@ -16,19 +15,17 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
 
   const onClickedChangeChart = () => {
     void (async () => {
-      await api
-        .patch(`/canvas/charts/${chartId}`, {
-          xAxis: chartState.xAxisName,
-          yAxis: chartState.yAxisName,
-        })
-        .then(res => {
-          openToastMessage({ dom: toastLayerRef.current, type: 'success', message: res.message });
-        });
+      await api.patch(`/canvas/charts/${chartId}`, {
+        xAxis: chartState.xAxisName,
+        yAxis: chartState.yAxisName,
+        name: chartState.name,
+        unit: chartState.unit,
+      });
     })();
   };
 
   return (
-    <div class="flex w-[30%] shrink-0 flex-col justify-center gap-8 bg-white/60 p-10">
+    <div class="flex w-[30%] shrink-0 flex-col justify-center gap-4 bg-white/60 p-10">
       <Section title="DATA SETTINGS">
         <div class="flex flex-col gap-8">
           <FieldRow
@@ -70,6 +67,30 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
         </div>
       </Section>
       <div class="h-px w-full bg-gray-200" />
+      <Section title="TITLE">
+        <div class="flex flex-col gap-4">
+          <Input
+            id={`${chartId}-chart-title-input`}
+            value={chartState.name}
+            placeholder="차트 제목"
+            onInput={e => {
+              chartState.name = (e.target as HTMLInputElement).value;
+            }}
+          />
+        </div>
+      </Section>
+      <Section title="UNIT">
+        <div class="flex flex-col gap-4">
+          <Input
+            id={`${chartId}-chart-unit-input`}
+            value={chartState.unit}
+            placeholder="단위"
+            onInput={e => {
+              chartState.unit = (e.target as HTMLInputElement).value;
+            }}
+          />
+        </div>
+      </Section>
       <Section title="AXES">
         <div class="flex flex-col gap-4">
           <FieldRow
@@ -87,7 +108,7 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
           <Input
             id={`${chartId}-axis-x-input`}
             value={chartState.xAxisName}
-            placeholder="X축 이름"
+            placeholder="X축"
             onInput={e => {
               chartState.xAxisName = (e.target as HTMLInputElement).value;
             }}
@@ -107,7 +128,7 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
           <Input
             id={`${chartId}-axis-y-input`}
             value={chartState.yAxisName}
-            placeholder="Y축 이름"
+            placeholder="Y축"
             onInput={e => {
               chartState.yAxisName = (e.target as HTMLInputElement).value;
             }}
@@ -115,7 +136,7 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
         </div>
       </Section>
       <div class="flex w-full justify-end">
-        <div class="h-10 w-1/3">
+        <div class="h-10 w-full">
           <Button label="저장" color="primary" onClick={onClickedChangeChart} />
         </div>
       </div>

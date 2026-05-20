@@ -7,6 +7,7 @@ export type ChartListItem = {
   createdAt: number;
   xaxis: string;
   yaxis: string;
+  unit: string;
 };
 
 export type ChartList = ChartListItem[];
@@ -17,4 +18,5 @@ export type Chart = {
   circles: Circle[];
   xaxis: string;
   yaxis: string;
+  unit: string;
 };

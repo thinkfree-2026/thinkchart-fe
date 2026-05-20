@@ -12,4 +12,5 @@ export const chartStore = createStore({
   xAxisName: '',
   showYAxisName: true,
   yAxisName: '',
+  unit: '',
 });
