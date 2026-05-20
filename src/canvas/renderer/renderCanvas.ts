@@ -137,7 +137,7 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     const cursors = cursorStore.getCursors();
     cursors.forEach(cursor => {
       if (cursor.id !== userId) {
-        drawCursor(ctx, cursor);
+        drawCursor(ctx, camera.scale, cursor);
       }
     });
   };

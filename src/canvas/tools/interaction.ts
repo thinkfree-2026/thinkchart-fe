@@ -423,9 +423,10 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     currentMousePosition.y = e.clientY;
 
     const { userId } = userStore.state;
-    updateCursor(userId, currentWorldPosition.x, currentWorldPosition.y);
 
-    if (userId !== '') {
+    if (userId != null) {
+      updateCursor(userId, currentWorldPosition.x, currentWorldPosition.y);
+
       cursorStore.setCursor({
         id: userId,
         x: currentWorldPosition.x,
@@ -473,9 +474,9 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
       const currentDistance = Math.max(dx, dy);
       const distanceDelta = currentDistance - initialDragDistance;
       const tempRadius = CIRCLE_RADIUS * Math.sqrt(initialCircleValue / RADIUS_RATIO);
-      const newVirtualRadius = tempRadius + distanceDelta;
+      const newTempRadius = tempRadius + distanceDelta;
 
-      let newValue = Math.round(RADIUS_RATIO * Math.pow(newVirtualRadius / CIRCLE_RADIUS, 2));
+      let newValue = Math.round(RADIUS_RATIO * Math.pow(newTempRadius / CIRCLE_RADIUS, 2));
       newValue = Math.max(1, newValue);
 
       let finalRadius = CIRCLE_RADIUS * Math.sqrt(newValue / RADIUS_RATIO);
@@ -583,16 +584,18 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
 
       const tempId = crypto.randomUUID();
 
-      circleStore.addCircle({
-        userId,
-        id: tempId,
-        chartId: null,
-        x: worldPosition.x,
-        y: worldPosition.y,
-        value,
-        radius: clampedRadius,
-        color: CIRCLE_COLOR,
-      });
+      if (userId != null) {
+        circleStore.addCircle({
+          userId,
+          id: tempId,
+          chartId: null,
+          x: worldPosition.x,
+          y: worldPosition.y,
+          value,
+          radius: clampedRadius,
+          color: CIRCLE_COLOR,
+        });
+      }
 
       const addCircle = async () => {
         try {
@@ -634,7 +637,10 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     stopBrushAnimation();
 
     const { userId } = userStore.state;
-    cursorStore.deleteCursor(userId);
+
+    if (userId != null) {
+      cursorStore.deleteCursor(userId);
+    }
   };
 
   const onWheel = (e: WheelEvent) => {

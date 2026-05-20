@@ -24,7 +24,7 @@ export const websocketClient = new Client({
 
     websocketClient.subscribe('/user/queue/me', message => {
       const data = JSON.parse(message.body) as UserResponse;
-      userStore.setUserId(data.payload.userId);
+      userStore.setUserId(data.payload.userId, data.payload.color);
     });
 
     canvasSocket.getUserId();
