@@ -26,10 +26,10 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
 
   return (
     <div class="flex w-[30%] shrink-0 flex-col justify-center gap-4 bg-white/60 p-10">
-      <Section title="DATA SETTINGS">
+      <Section>
         <div class="flex flex-col gap-8">
           <FieldRow
-            label="Show Data Values"
+            label="값 표시 여부"
             toggle={
               <Toggle
                 id={`${chartId}-data-values`}
@@ -41,7 +41,7 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
             }
           />
           <FieldRow
-            label="Show Percentage"
+            label="퍼센트 표시 여부"
             toggle={
               <Toggle
                 id={`${chartId}-data-pct`}
@@ -53,7 +53,7 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
             }
           />
           <FieldRow
-            label="Show Sum"
+            label="합 표시 여부"
             toggle={
               <Toggle
                 id={`${chartId}-data-sum`}
@@ -67,8 +67,9 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
         </div>
       </Section>
       <div class="h-px w-full bg-gray-200" />
-      <Section title="TITLE">
+      <Section>
         <div class="flex flex-col gap-4">
+          <FieldRow label="차트 제목" />
           <Input
             id={`${chartId}-chart-title-input`}
             value={chartState.name}
@@ -77,10 +78,7 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
               chartState.name = (e.target as HTMLInputElement).value;
             }}
           />
-        </div>
-      </Section>
-      <Section title="UNIT">
-        <div class="flex flex-col gap-4">
+          <FieldRow label="단위" />
           <Input
             id={`${chartId}-chart-unit-input`}
             value={chartState.unit}
@@ -90,11 +88,9 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
             }}
           />
         </div>
-      </Section>
-      <Section title="AXES">
         <div class="flex flex-col gap-4">
           <FieldRow
-            label="X-axis Name"
+            label="X축 이름"
             toggle={
               <Toggle
                 id={`${chartId}-axis-x-toggle`}
@@ -114,7 +110,7 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
             }}
           />
           <FieldRow
-            label="Y-axis Name"
+            label="Y축 이름"
             toggle={
               <Toggle
                 id={`${chartId}-axis-y-toggle`}

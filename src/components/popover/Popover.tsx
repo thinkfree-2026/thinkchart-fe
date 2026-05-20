@@ -56,6 +56,11 @@ export const Popover = ({
           if (!Number.isFinite(nextValue)) return;
           onValueInput?.(nextValue);
         }}
+        onKeyDown={e => {
+          if (['-', '.', 'e', 'E', '+'].includes(e.key)) {
+            e.preventDefault();
+          }
+        }}
       />
       {/*<Slider id={`${id}-slider`} value={opacity * 100} onInput={onOpacityInput} />*/}
       <div class="mt-3 h-6 text-xs">
