@@ -401,12 +401,12 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
   };
 
   const updateCursor = throttle(
-    (id: string, x: number, y: number) =>
+    (id: string, x: number, y: number, color: '1' | '2' | '3') =>
       canvasSocket.sendCursorPosition({
         id,
         x,
         y,
-        color: '#000000',
+        color,
       }),
     10
   );
@@ -422,16 +422,16 @@ export const setupInteraction = (canvas: HTMLCanvasElement, cleanupTasks: Array<
     currentMousePosition.x = e.clientX;
     currentMousePosition.y = e.clientY;
 
-    const { userId } = userStore.state;
+    const { userId, color } = userStore.state;
 
-    if (userId != null) {
-      updateCursor(userId, currentWorldPosition.x, currentWorldPosition.y);
+    if (userId != null && color != null) {
+      updateCursor(userId, currentWorldPosition.x, currentWorldPosition.y, color);
 
       cursorStore.setCursor({
         id: userId,
         x: currentWorldPosition.x,
         y: currentWorldPosition.y,
-        color: '#000000',
+        color,
       });
     }
 

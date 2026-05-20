@@ -100,16 +100,7 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
 
     // 호버 표시 렌더링
     if (hoveredIndex !== -1 && !selectedIndices.includes(hoveredIndex) && hoveredIndex < circles.length) {
-      drawHighlight(
-        ctx,
-        camera.scale,
-        circles[hoveredIndex],
-        false,
-        0.0,
-        true,
-        BASE_THICKNESS * 2,
-        selectedIndices.length === 1
-      );
+      drawHighlight(ctx, camera.scale, circles[hoveredIndex], false, 0.0, true, BASE_THICKNESS * 2);
     }
 
     // 선택 표시 렌더링
@@ -133,10 +124,10 @@ export const renderCanvas = (canvas: HTMLCanvasElement, cleanupTasks: Array<() =
     }
 
     // 커서 렌더링
-    const { userId } = userStore.state;
+    const { userId, color } = userStore.state;
     const cursors = cursorStore.getCursors();
     cursors.forEach(cursor => {
-      if (cursor.id !== userId) {
+      if (cursor.id !== userId && color != null) {
         drawCursor(ctx, camera.scale, cursor);
       }
     });

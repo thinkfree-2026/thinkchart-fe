@@ -1,8 +1,7 @@
-import { userStore } from '../store/index.ts';
 import type { Cursor } from '../types/index.ts';
 
 export const drawCursor = (ctx: CanvasRenderingContext2D, cameraScale: number, cursor: Cursor) => {
-  const color = userStore.state.color;
+  const color = cursor.color;
 
   const cursorImageSrc = () => {
     if (color === '1') return '/cursor-pink.png';

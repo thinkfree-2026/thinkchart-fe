@@ -2,7 +2,7 @@ export type UserResponse = {
   action: 'USER_ASSIGNED';
   payload: {
     userId: string;
-    color: string;
+    color: '1' | '2' | '3';
   };
 };
 
@@ -10,7 +10,7 @@ export type CursorResponse = {
   id: string;
   x: number;
   y: number;
-  color: string;
+  color: UserResponse['payload']['color'];
 };
 
 export type CircleResponse = {

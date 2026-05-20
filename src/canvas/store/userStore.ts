@@ -1,7 +1,7 @@
 import { createStore } from '../../utils/index.ts';
 import type { User } from '../types/index.ts';
 
-const createCursorStore = () => {
+const createUserStore = () => {
   const { state, subscribe } = createStore<User>({
     userId: null,
     color: null,
@@ -10,11 +10,11 @@ const createCursorStore = () => {
   return {
     state,
     subscribe,
-    setUserId: (userId: string, color: string) => {
+    setUser: (userId: string, color: '1' | '2' | '3') => {
       state.userId = userId;
       state.color = color;
     },
   };
 };
 
-export const userStore = createCursorStore();
+export const userStore = createUserStore();
