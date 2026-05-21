@@ -57,7 +57,7 @@ export const Modal = ({ id, width = 'w-[1100px]', height = 'h-[720px]', children
         id="btn-close-modal"
         type="button"
         aria-label="Close modal"
-        class="absolute top-6 right-6 h-10 w-10 cursor-pointer rounded-full hover:bg-zinc-100/60"
+        class="absolute top-6 right-6 h-10 w-10 cursor-pointer rounded-full outline-none hover:bg-zinc-100/60"
         onclick={handleCloseButtonClick}
       >
         ✕

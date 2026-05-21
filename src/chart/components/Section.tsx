@@ -1,7 +1,7 @@
 import type { ChildrenType } from '../../types/index.ts';
 
 type SectionProps = {
-  title: string;
+  title?: string;
   children?: ChildrenType;
 };
 

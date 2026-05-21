@@ -2,8 +2,6 @@ import { CIRCLE_RADIUS, MAX_RADIUS, RADIUS_RATIO } from '../canvas/constants/ind
 import { circleStore } from '../canvas/store/index.ts';
 import { chartTitleRef } from '../chart/components/index.ts';
 import { chartStore } from '../chart/store/index.ts';
-import { openToastMessage } from '../components/common/Toast.tsx';
-import { toastLayerRef } from '../components/index.ts';
 import { chartListState } from '../store/index.ts';
 import type { ChartListItem } from '../types/index.ts';
 
@@ -50,14 +48,6 @@ export const handleChartSocketMessage = (message: ChartSocketMessage) => {
     }
 
     case 'CHART_UPDATED': {
-      if (toastLayerRef.current) {
-        openToastMessage({
-          dom: toastLayerRef.current,
-          type: 'success',
-          message: '차트가 수정되었습니다.',
-        });
-      }
-
       const updatedChart = message.payload;
       const { state: chartState } = chartStore;
 

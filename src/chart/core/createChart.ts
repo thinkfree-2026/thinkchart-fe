@@ -146,7 +146,7 @@ export const createChart = (
 
       const newValue = initialBarValue + deltaY * valuePerPixel;
 
-      data[draggedBarIndex].value = Math.max(0, Math.round(newValue));
+      data[draggedBarIndex].value = Math.max(1, Math.round(newValue));
 
       requestRedraw();
       const draggedItem = data[draggedBarIndex];
