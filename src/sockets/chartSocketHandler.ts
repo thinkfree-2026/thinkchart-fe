@@ -5,6 +5,8 @@ import { chartStore } from '../chart/store/index.ts';
 import { chartListState } from '../store/index.ts';
 import type { ChartListItem } from '../types/index.ts';
 
+import type { CircleResponse } from './socketTypes.ts';
+
 export type ChartSocketMessage =
   | {
       action: 'CHART_CREATED' | 'CHART_UPDATED';
@@ -23,6 +25,10 @@ export type ChartSocketMessage =
         id: string;
         value: number;
       };
+    }
+  | {
+      action: 'CHART_BAR_DELETED';
+      payload: CircleResponse;
     };
 
 export const handleChartSocketMessage = (message: ChartSocketMessage) => {
@@ -94,6 +100,11 @@ export const handleChartSocketMessage = (message: ChartSocketMessage) => {
       const clampedRadius = Math.min(baseRadius, MAX_RADIUS);
 
       circleStore.updateCircleSize(index, clampedRadius, value);
+      break;
+    }
+
+    case 'CHART_BAR_DELETED': {
+      circleStore.updateCircleChartId(message.payload.id);
       break;
     }
   }
