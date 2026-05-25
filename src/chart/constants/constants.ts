@@ -1,5 +1,5 @@
 export const CHART_SIZES = {
-  PADDING_TOP: 30,
+  PADDING_TOP: 50,
   PADDING_BOTTOM: 40,
   /** X축 제목 표시 시 하단에 추가로 확보하는 여백 */
   AXIS_X_TITLE_SPACE: 22,
