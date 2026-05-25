@@ -4,6 +4,7 @@ import { chartStore, dataSettingsStore } from '../store/index.ts';
 
 import { FieldRow } from './FieldRow.tsx';
 import { Section } from './Section.tsx';
+import { chartControlsRef } from './ChartModal.tsx';
 
 type ChartOptionPanelProps = {
   chartId: string;
@@ -15,12 +16,16 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
 
   const onClickedChangeChart = () => {
     void (async () => {
-      await api.patch(`/canvas/charts/${chartId}`, {
-        xAxis: chartState.xAxisName,
-        yAxis: chartState.yAxisName,
-        name: chartState.name,
-        unit: chartState.unit,
-      });
+      await api
+        .patch(`/canvas/charts/${chartId}`, {
+          xAxis: chartState.xAxisName,
+          yAxis: chartState.yAxisName,
+          name: chartState.name,
+          unit: chartState.unit,
+        })
+        .then(() => {
+          chartControlsRef.current?.redraw();
+        });
     })();
   };
 
