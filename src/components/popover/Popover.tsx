@@ -30,6 +30,7 @@ export const Popover = ({
           <div class="text-sm font-semibold">
             <Input
               value={label}
+              placeholder="막대 이름 입력"
               onInput={e => {
                 const nextValue = (e.currentTarget as HTMLInputElement).value;
                 onNameInput?.(nextValue);
