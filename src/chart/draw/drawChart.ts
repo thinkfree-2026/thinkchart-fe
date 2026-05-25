@@ -152,10 +152,10 @@ export const drawChart = ({ ctx, width, height, data, max }: DrawChartProps) => 
         totalValue > 0 ? `${((item.value / totalValue) * 100).toFixed(1).replace(/\.0$/, '')}%` : '0%';
       const barLabel =
         showDataValues && showPercentage
-          ? `${valueLabel} (${percentageLabel})`
+          ? `${valueLabel} ${axis.unit} (${percentageLabel})`
           : showPercentage
             ? percentageLabel
-            : valueLabel;
+            : `${valueLabel} ${axis.unit}`;
       ctx.fillText(barLabel, x + CHART_SIZES.BAR_WIDTH / 2, displayTopY - BAR_VALUE_GAP);
     }
 

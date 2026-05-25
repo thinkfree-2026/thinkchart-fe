@@ -78,11 +78,11 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
               chartState.name = (e.target as HTMLInputElement).value;
             }}
           />
-          <FieldRow label="단위" />
+          <FieldRow label="기준 단위" />
           <Input
             id={`${chartId}-chart-unit-input`}
             value={chartState.unit}
-            placeholder="단위"
+            placeholder="단위를 입력해주세요."
             onInput={e => {
               chartState.unit = (e.target as HTMLInputElement).value;
             }}
