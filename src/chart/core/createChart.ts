@@ -168,11 +168,17 @@ export const createChart = (
 
   const onPointerUp = () => {
     if (isDragging) {
+      if (draggedBarIndex !== null) {
+        data[draggedBarIndex].isDirty = true;
+        requestRedraw();
+      }
+
       isDragging = false;
       draggedBarIndex = null;
       if (dragReleaseTimer !== null) {
         window.clearTimeout(dragReleaseTimer);
       }
+
       // mouseup 뒤 이어지는 backdrop click에서 모달이 닫히지 않도록 한 틱 지연 해제
       dragReleaseTimer = window.setTimeout(() => {
         delete document.body.dataset.chartDragging;

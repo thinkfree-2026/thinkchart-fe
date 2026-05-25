@@ -17,6 +17,7 @@ const BAR_VALUE_GAP = 10;
 const LABEL_BOTTOM = 15;
 const X_TITLE_SPACE = 20;
 const X_TITLE_BOTTOM = 6;
+
 const SUM_RIGHT_GAP = 8;
 const SUM_MIN_LEFT = 40;
 
@@ -142,20 +143,28 @@ export const drawChart = ({ ctx, width, height, data, max }: DrawChartProps) => 
     ctx.globalAlpha = 1;
 
     if (showDataValues || showPercentage || item.isActive === true) {
-      ctx.fillStyle = CHART_COLORS.ACTIVE_TEXT;
+      if (item.isDirty === true) {
+        ctx.fillStyle = CHART_COLORS.UNSAVED_TEXT;
+      } else if (item.isActive === true) {
+        ctx.fillStyle = CHART_COLORS.ACTIVE_TEXT;
+      } else {
+        ctx.fillStyle = CHART_COLORS.INACTIVE_TEXT;
+      }
+
       ctx.font = 'bold 14px Noto-Sans';
       ctx.textAlign = 'center';
 
       const displayTopY = excessive ? CHART_SIZES.PADDING_TOP : barTopY;
       const valueLabel = Math.round(item.value).toString();
+
       const percentageLabel =
         totalValue > 0 ? `${((item.value / totalValue) * 100).toFixed(1).replace(/\.0$/, '')}%` : '0%';
       const barLabel =
         showDataValues && showPercentage
-          ? `${valueLabel} (${percentageLabel})`
+          ? `${valueLabel}${axis.unit} (${percentageLabel})`
           : showPercentage
             ? percentageLabel
-            : valueLabel;
+            : `${valueLabel}${axis.unit}`;
       ctx.fillText(barLabel, x + CHART_SIZES.BAR_WIDTH / 2, displayTopY - BAR_VALUE_GAP);
     }
 
@@ -168,33 +177,74 @@ export const drawChart = ({ ctx, width, height, data, max }: DrawChartProps) => 
     ctx.fillText(item.name, x + CHART_SIZES.BAR_WIDTH / 2, categoryBaselineY);
   });
 
+  const scrollContainer = canvas.parentElement?.closest('[data-chart-scroll-container="true"]') as HTMLElement | null;
+  const currentScrollLeft = scrollContainer ? scrollContainer.scrollLeft : 0;
+
+  // 미저장 경고용 좌측 앵커 (Y축 좌표 숫자 시작 라인)
+  const anchorLeftX = currentScrollLeft + axisYTitleSpace + 4;
+  const topY = 10;
+
+  // 1. 👇 Sum 그리기 로직 (우측 끝 정렬로 롤백)
+  if (showSum) {
+    // 스크롤 시에도 화면 우측 끝에 붙어 있도록 X 좌표 계산
+    const viewportRightX = scrollContainer
+      ? scrollContainer.scrollLeft + scrollContainer.clientWidth - SUM_RIGHT_GAP
+      : width - SUM_RIGHT_GAP;
+
+    // Y축 영역을 침범하지 않도록 최소 마진(SUM_MIN_LEFT) 확보
+    const sumX = Math.max(paddingLeft + SUM_MIN_LEFT, Math.min(width - SUM_RIGHT_GAP, viewportRightX));
+
+    ctx.save();
+    ctx.fillStyle = CHART_COLORS.INACTIVE_TEXT;
+    ctx.font = 'bold 13px Noto-Sans';
+    ctx.textAlign = 'right'; // 👈 우측 정렬
+    ctx.textBaseline = 'top';
+    ctx.fillText(`Sum: ${Math.round(totalValue)}`, sumX, topY);
+    ctx.restore();
+  }
+
+  // 2. 👇 미저장 데이터(hasUnsaved) 범례 표시 (좌측 Y축 숫자 라인 고정)
+  const hasUnsaved = data.some(item => item.isDirty === true);
+
+  if (hasUnsaved) {
+    // 이제 Sum이 오른쪽으로 가버렸으니, 왼쪽 시작점(anchorLeftX)을 온전히 혼자 사용합니다.
+    const legendX = anchorLeftX;
+    const legendY = topY;
+
+    ctx.save();
+    ctx.textAlign = 'left'; // 👈 좌측 정렬 유지
+    ctx.textBaseline = 'top';
+    ctx.font = '12px Noto-Sans';
+
+    // 오렌지색 원 그리기
+    ctx.fillStyle = CHART_COLORS.UNSAVED_TEXT;
+    ctx.beginPath();
+    ctx.arc(legendX + 4, legendY + 7, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 텍스트 그리기
+    ctx.fillStyle = CHART_COLORS.INACTIVE_TEXT;
+    ctx.fillText('저장되지 않은 변경사항', legendX + 14, legendY);
+    ctx.restore();
+  }
   if (showXTitle) {
+    // 👇 화면(뷰포트)의 중앙 X 좌표를 다시 계산합니다.
     const scrollContainer = canvas.parentElement?.closest('[data-chart-scroll-container="true"]') as HTMLElement | null;
     const viewportCenterX = scrollContainer
       ? scrollContainer.scrollLeft + scrollContainer.clientWidth / 2
       : paddingLeft + chartWidth / 2;
+
+    // Y축 영역(paddingLeft)을 침범하지 않도록 방어
     const xTitleX = Math.max(paddingLeft, Math.min(width, viewportCenterX));
+
     ctx.save();
     ctx.fillStyle = CHART_COLORS.INACTIVE_TEXT;
     ctx.font = '14px Noto-Sans';
-    ctx.textAlign = 'center';
+    ctx.textAlign = 'center'; // 👈 다시 중앙 정렬로 변경!
     ctx.textBaseline = 'bottom';
-    ctx.fillText(xAxisTitle, xTitleX, height - X_TITLE_BOTTOM);
-    ctx.restore();
-  }
 
-  if (showSum) {
-    const scrollContainer = canvas.parentElement?.closest('[data-chart-scroll-container="true"]') as HTMLElement | null;
-    const viewportRightX = scrollContainer
-      ? scrollContainer.scrollLeft + scrollContainer.clientWidth - SUM_RIGHT_GAP
-      : width - SUM_RIGHT_GAP;
-    const sumX = Math.max(paddingLeft + SUM_MIN_LEFT, Math.min(width - SUM_RIGHT_GAP, viewportRightX));
-    ctx.save();
-    ctx.fillStyle = CHART_COLORS.INACTIVE_TEXT;
-    ctx.font = 'bold 13px Noto-Sans';
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'top';
-    ctx.fillText(`Sum: ${Math.round(totalValue)}`, sumX, SUM_RIGHT_GAP);
+    // 계산된 중앙 좌표(xTitleX)에 X축 제목을 그립니다.
+    ctx.fillText(xAxisTitle, xTitleX, height - X_TITLE_BOTTOM);
     ctx.restore();
   }
 

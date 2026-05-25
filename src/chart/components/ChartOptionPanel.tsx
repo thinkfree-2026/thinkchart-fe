@@ -2,6 +2,7 @@ import { api } from '../../api/http.ts';
 import { Button, Input, Toggle } from '../../components/index.ts';
 import { chartStore, dataSettingsStore } from '../store/index.ts';
 
+import { chartControlsRef } from './ChartModal.tsx';
 import { FieldRow } from './FieldRow.tsx';
 import { Section } from './Section.tsx';
 
@@ -15,12 +16,16 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
 
   const onClickedChangeChart = () => {
     void (async () => {
-      await api.patch(`/canvas/charts/${chartId}`, {
-        xAxis: chartState.xAxisName,
-        yAxis: chartState.yAxisName,
-        name: chartState.name,
-        unit: chartState.unit,
-      });
+      await api
+        .patch(`/canvas/charts/${chartId}`, {
+          xAxis: chartState.xAxisName,
+          yAxis: chartState.yAxisName,
+          name: chartState.name,
+          unit: chartState.unit,
+        })
+        .then(() => {
+          chartControlsRef.current?.redraw();
+        });
     })();
   };
 
@@ -78,11 +83,11 @@ export const ChartOptionPanel = ({ chartId }: ChartOptionPanelProps) => {
               chartState.name = (e.target as HTMLInputElement).value;
             }}
           />
-          <FieldRow label="단위" />
+          <FieldRow label="기준 단위" />
           <Input
             id={`${chartId}-chart-unit-input`}
             value={chartState.unit}
-            placeholder="단위"
+            placeholder="단위를 입력해주세요."
             onInput={e => {
               chartState.unit = (e.target as HTMLInputElement).value;
             }}

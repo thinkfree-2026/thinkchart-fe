@@ -11,6 +11,7 @@ export type PopoverInfo = {
 
 export type ChartData = Circle & {
   isActive?: boolean;
+  isDirty?: boolean;
 };
 
 export type BarChartProps = {

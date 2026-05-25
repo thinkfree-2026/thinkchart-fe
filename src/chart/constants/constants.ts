@@ -1,5 +1,5 @@
 export const CHART_SIZES = {
-  PADDING_TOP: 30,
+  PADDING_TOP: 50,
   PADDING_BOTTOM: 40,
   /** X축 제목 표시 시 하단에 추가로 확보하는 여백 */
   AXIS_X_TITLE_SPACE: 22,
@@ -20,4 +20,5 @@ export const CHART_COLORS = {
   INACTIVE_FILL: 'rgba(99, 102, 241, 0.2)',
   INACTIVE_TEXT: '#9CA3AF',
   AXIS_GRID: 'rgba(156, 163, 175, 0.35)',
+  UNSAVED_TEXT: '#F59E0B',
 };

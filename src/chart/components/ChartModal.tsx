@@ -15,7 +15,6 @@ type ChartModalProps = {
 };
 
 export const chartControlsRef = createRef<{ redraw: () => void } | null>(null);
-export const chartTitleRef = createRef<HTMLDivElement>(null);
 
 export const ChartModal = ({ chartId }: ChartModalProps) => {
   const { state: chartDataState } = chartDataStore;
@@ -85,13 +84,12 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
           value={targetData.value}
           onNameInput={(nextName: string) => {
             targetData.name = nextName;
-
+            targetData.isDirty = true;
             chartControlsRef.current?.redraw();
           }}
           onValueInput={(nextValue: number) => {
-            if (!nextValue) targetData.value = 1;
-            else targetData.value = nextValue;
-
+            targetData.value = Math.min(1, nextValue);
+            targetData.isDirty = true;
             chartControlsRef.current?.redraw();
           }}
           onDelete={() => {
@@ -118,11 +116,16 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
           }}
           onSave={() => {
             void (async () => {
-              await api.patch(`/canvas/charts/${targetData.chartId}/${targetData.id}`, {
-                name: targetData.name,
-                value: targetData.value,
-                // opacity: targetData.opacity > 1 ? targetData.opacity / 100 : targetData.opacity,
-              });
+              await api
+                .patch(`/canvas/charts/${targetData.chartId}/${targetData.id}`, {
+                  name: targetData.name,
+                  value: targetData.value,
+                  // opacity: targetData.opacity > 1 ? targetData.opacity / 100 : targetData.opacity,
+                })
+                .then(() => {
+                  targetData.isDirty = false;
+                  chartControlsRef.current?.redraw();
+                });
             })();
           }}
         />
@@ -145,7 +148,7 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
         }}
       >
         <div class="flex min-w-0 flex-1 flex-col p-10">
-          <div ref={chartTitleRef} class="text-title">
+          <div id={`${chartId}-chart-title`} class="text-title">
             {chartState.name}
           </div>
           <div ref={chartContainerRef} class="relative mt-4 h-full min-w-0 overflow-hidden">

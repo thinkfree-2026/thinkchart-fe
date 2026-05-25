@@ -1,6 +1,5 @@
 import { CIRCLE_RADIUS, MAX_RADIUS, RADIUS_RATIO } from '../canvas/constants/index.ts';
 import { circleStore } from '../canvas/store/index.ts';
-import { chartTitleRef } from '../chart/components/index.ts';
 import { chartStore } from '../chart/store/index.ts';
 import { chartListState } from '../store/index.ts';
 import type { ChartListItem } from '../types/index.ts';
@@ -70,8 +69,11 @@ export const handleChartSocketMessage = (message: ChartSocketMessage) => {
         yAxisInput.value = updatedChart.yaxis;
       }
 
+      const title = document.getElementById(`${updatedChart.id}-chart-title`) as HTMLInputElement | null;
       const titleInput = document.getElementById(`${updatedChart.id}-chart-title-input`) as HTMLInputElement | null;
-      if (chartTitleRef.current) chartTitleRef.current.innerText = chartState.name;
+      if (title) {
+        title.innerText = chartState.name;
+      }
       if (titleInput) {
         titleInput.value = updatedChart.name;
       }
