@@ -15,7 +15,6 @@ type ChartModalProps = {
 };
 
 export const chartControlsRef = createRef<{ redraw: () => void } | null>(null);
-export const chartTitleRef = createRef<HTMLDivElement>(null);
 
 export const ChartModal = ({ chartId }: ChartModalProps) => {
   const { state: chartDataState } = chartDataStore;
@@ -144,7 +143,7 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
         }}
       >
         <div class="flex min-w-0 flex-1 flex-col p-10">
-          <div ref={chartTitleRef} class="text-title">
+          <div id={`${chartId}-chart-title`} class="text-title">
             {chartState.name}
           </div>
           <div ref={chartContainerRef} class="relative mt-4 h-full min-w-0 overflow-hidden">
