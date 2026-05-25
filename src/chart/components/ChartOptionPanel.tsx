@@ -2,9 +2,9 @@ import { api } from '../../api/http.ts';
 import { Button, Input, Toggle } from '../../components/index.ts';
 import { chartStore, dataSettingsStore } from '../store/index.ts';
 
+import { chartControlsRef } from './ChartModal.tsx';
 import { FieldRow } from './FieldRow.tsx';
 import { Section } from './Section.tsx';
-import { chartControlsRef } from './ChartModal.tsx';
 
 type ChartOptionPanelProps = {
   chartId: string;

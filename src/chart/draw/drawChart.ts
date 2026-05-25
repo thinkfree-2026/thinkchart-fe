@@ -142,20 +142,28 @@ export const drawChart = ({ ctx, width, height, data, max }: DrawChartProps) => 
     ctx.globalAlpha = 1;
 
     if (showDataValues || showPercentage || item.isActive === true) {
-      ctx.fillStyle = CHART_COLORS.ACTIVE_TEXT;
+      if (item.isDirty === true) {
+        ctx.fillStyle = CHART_COLORS.UNSAVED_TEXT;
+      } else if (item.isActive === true) {
+        ctx.fillStyle = CHART_COLORS.ACTIVE_TEXT;
+      } else {
+        ctx.fillStyle = CHART_COLORS.INACTIVE_TEXT;
+      }
+
       ctx.font = 'bold 14px Noto-Sans';
       ctx.textAlign = 'center';
 
       const displayTopY = excessive ? CHART_SIZES.PADDING_TOP : barTopY;
       const valueLabel = Math.round(item.value).toString();
+
       const percentageLabel =
         totalValue > 0 ? `${((item.value / totalValue) * 100).toFixed(1).replace(/\.0$/, '')}%` : '0%';
       const barLabel =
         showDataValues && showPercentage
-          ? `${valueLabel} ${axis.unit} (${percentageLabel})`
+          ? `${valueLabel}${axis.unit} (${percentageLabel})`
           : showPercentage
             ? percentageLabel
-            : `${valueLabel} ${axis.unit}`;
+            : `${valueLabel}${axis.unit}`;
       ctx.fillText(barLabel, x + CHART_SIZES.BAR_WIDTH / 2, displayTopY - BAR_VALUE_GAP);
     }
 

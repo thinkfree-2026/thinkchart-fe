@@ -84,12 +84,12 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
           value={targetData.value}
           onNameInput={(nextName: string) => {
             targetData.name = nextName;
-
+            targetData.isDirty = true;
             chartControlsRef.current?.redraw();
           }}
           onValueInput={(nextValue: number) => {
             targetData.value = Math.min(1, nextValue);
-
+            targetData.isDirty = true;
             chartControlsRef.current?.redraw();
           }}
           onDelete={() => {
@@ -116,11 +116,16 @@ export const ChartModal = ({ chartId }: ChartModalProps) => {
           }}
           onSave={() => {
             void (async () => {
-              await api.patch(`/canvas/charts/${targetData.chartId}/${targetData.id}`, {
-                name: targetData.name,
-                value: targetData.value,
-                // opacity: targetData.opacity > 1 ? targetData.opacity / 100 : targetData.opacity,
-              });
+              await api
+                .patch(`/canvas/charts/${targetData.chartId}/${targetData.id}`, {
+                  name: targetData.name,
+                  value: targetData.value,
+                  // opacity: targetData.opacity > 1 ? targetData.opacity / 100 : targetData.opacity,
+                })
+                .then(() => {
+                  targetData.isDirty = false;
+                  chartControlsRef.current?.redraw();
+                });
             })();
           }}
         />

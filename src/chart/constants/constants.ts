@@ -20,4 +20,5 @@ export const CHART_COLORS = {
   INACTIVE_FILL: 'rgba(99, 102, 241, 0.2)',
   INACTIVE_TEXT: '#9CA3AF',
   AXIS_GRID: 'rgba(156, 163, 175, 0.35)',
+  UNSAVED_TEXT: '#F59E0B',
 };
